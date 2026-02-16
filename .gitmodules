@@ -1,0 +1,12 @@
+[submodule "wrf_hydro_nwm_public"]
+	path = wrf_hydro_nwm_public
+	url = https://github.com/NCAR/wrf_hydro_nwm_public.git
+[submodule "bmi-fortran"]
+	path = bmi-fortran
+	url = https://github.com/csdms/bmi-fortran.git
+[submodule "bmi-example-fortran"]
+	path = bmi-example-fortran
+	url = https://github.com/csdms/bmi-example-fortran.git
+[submodule "schism_NWM_BMI"]
+	path = schism_NWM_BMI
+	url = https://github.com/schism-dev/schism_NWM_BMI.git
