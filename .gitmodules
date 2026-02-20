@@ -10,3 +10,7 @@
 [submodule "schism_NWM_BMI"]
 	path = schism_NWM_BMI
 	url = https://github.com/schism-dev/schism_NWM_BMI.git
+[submodule "SCHISM_BMI"]
+	path = SCHISM_BMI
+	url = https://github.com/LynkerIntel/SCHISM_BMI.git
+	branch = bmi-integration-master
