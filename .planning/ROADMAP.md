@@ -29,7 +29,9 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. All 22 WRF-Hydro `.a` libraries are rebuilt with `-fPIC` (`CMAKE_POSITION_INDEPENDENT_CODE=ON`)
   2. The existing Fortran 151-test BMI suite still passes against the fPIC-rebuilt libraries (no regression)
   3. `readelf -d` or `objdump` on a sample `.o` confirms PIC relocations are present
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 01-01-PLAN.md -- Create rebuild_fpic.sh + update build.sh --fpic + execute fPIC rebuild + verify 151-test regression
 
 ### Phase 2: Shared Library + Install
 **Goal**: `libwrfhydrobmi.so` builds, links all dependencies with no unresolved symbols, and installs to conda prefix with pkg-config discovery -- making the library babelizer-ready
@@ -71,7 +73,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. fPIC Foundation | 0/? | Not started | - |
+| 1. fPIC Foundation | 0/1 | Planned | - |
 | 2. Shared Library + Install | 0/? | Not started | - |
 | 3. Python Validation | 0/? | Not started | - |
 | 4. Documentation | 0/? | Not started | - |
