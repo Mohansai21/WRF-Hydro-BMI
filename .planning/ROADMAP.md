@@ -29,7 +29,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. All 22 WRF-Hydro `.a` libraries are rebuilt with `-fPIC` (`CMAKE_POSITION_INDEPENDENT_CODE=ON`)
   2. The existing Fortran 151-test BMI suite still passes against the fPIC-rebuilt libraries (no regression)
   3. `readelf -d` or `objdump` on a sample `.o` confirms PIC relocations are present
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
 - [x] 01-01-PLAN.md -- Create rebuild_fpic.sh + update build.sh --fpic + execute fPIC rebuild + verify 151-test regression
 
@@ -73,7 +73,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. fPIC Foundation | 1/1 | Complete | 2026-02-23 |
+| 1. fPIC Foundation | 1/1 | Complete    | 2026-02-23 |
 | 2. Shared Library + Install | 0/? | Not started | - |
 | 3. Python Validation | 0/? | Not started | - |
 | 4. Documentation | 0/? | Not started | - |
