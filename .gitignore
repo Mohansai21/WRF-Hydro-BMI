@@ -9,7 +9,6 @@ _build/
 *.exe
 
 # Fortran compiler output
-*.mod
 *.smod
 
 # CMake
@@ -19,6 +18,10 @@ cmake_install.cmake
 Makefile
 CTestTestfile.cmake
 Testing/
+
+# Claude Code
+.claude/
+.CLAUDE.md
 
 # IDE
 .vscode/
@@ -40,6 +43,9 @@ dist/
 
 # Conda
 .conda/
+
+# WRF-Hydro local runs
+WRF_Hydro_Run_Local/
 
 # WRF-Hydro run output
 *.LDASOUT_DOMAIN*
