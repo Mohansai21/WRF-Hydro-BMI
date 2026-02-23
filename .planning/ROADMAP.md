@@ -14,7 +14,7 @@ This roadmap delivers `libwrfhydrobmi.so` -- a shared library that makes WRF-Hyd
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: fPIC Foundation** - Rebuild WRF-Hydro static libraries with position-independent code
+- [x] **Phase 1: fPIC Foundation** - Rebuild WRF-Hydro static libraries with position-independent code
 - [ ] **Phase 2: Shared Library + Install** - CMake and build.sh producing libwrfhydrobmi.so with conda install and pkg-config discovery
 - [ ] **Phase 3: Python Validation** - Minimal C bindings + Python ctypes test exercising BMI lifecycle against Croton NY data
 - [ ] **Phase 4: Documentation** - Doc 16 covering shared library architecture, babelizer readiness, and Python usage
@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. `readelf -d` or `objdump` on a sample `.o` confirms PIC relocations are present
 **Plans:** 1 plan
 Plans:
-- [ ] 01-01-PLAN.md -- Create rebuild_fpic.sh + update build.sh --fpic + execute fPIC rebuild + verify 151-test regression
+- [x] 01-01-PLAN.md -- Create rebuild_fpic.sh + update build.sh --fpic + execute fPIC rebuild + verify 151-test regression
 
 ### Phase 2: Shared Library + Install
 **Goal**: `libwrfhydrobmi.so` builds, links all dependencies with no unresolved symbols, and installs to conda prefix with pkg-config discovery -- making the library babelizer-ready
@@ -73,7 +73,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. fPIC Foundation | 0/1 | Planned | - |
+| 1. fPIC Foundation | 1/1 | Complete | 2026-02-23 |
 | 2. Shared Library + Install | 0/? | Not started | - |
 | 3. Python Validation | 0/? | Not started | - |
 | 4. Documentation | 0/? | Not started | - |

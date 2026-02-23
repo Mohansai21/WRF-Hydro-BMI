@@ -10,7 +10,7 @@ Requirements for the shared library milestone. Each maps to roadmap phases.
 
 ### Build Infrastructure
 
-- [ ] **BUILD-01**: WRF-Hydro 22 static libraries recompiled with `-fPIC` (`CMAKE_POSITION_INDEPENDENT_CODE=ON`) so they can be linked into a shared library
+- [x] **BUILD-01**: WRF-Hydro 22 static libraries recompiled with `-fPIC` (`CMAKE_POSITION_INDEPENDENT_CODE=ON`) so they can be linked into a shared library
 - [ ] **BUILD-02**: `libwrfhydrobmi.so` builds successfully via CMake, linking all 22 WRF-Hydro static libs + BMI + NetCDF + MPI with no unresolved symbols
 - [ ] **BUILD-03**: `build.sh` updated with shared library target (`-shared` flag) for fast dev iteration builds
 - [ ] **BUILD-04**: `cmake --install` places `libwrfhydrobmi.so`, `.mod` files, and `.pc` file into `$CONDA_PREFIX/{lib,include,lib/pkgconfig}`
@@ -88,7 +88,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BUILD-01 | Phase 1 | Pending |
+| BUILD-01 | Phase 1 | Complete |
 | BUILD-02 | Phase 2 | Pending |
 | BUILD-03 | Phase 2 | Pending |
 | BUILD-04 | Phase 2 | Pending |

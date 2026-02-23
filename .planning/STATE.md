@@ -9,29 +9,29 @@ See: .planning/PROJECT.md (updated 2026-02-23)
 
 ## Current Position
 
-Phase: 1 of 4 (fPIC Foundation)
+Phase: 2 of 4 (Shared Library + Install)
 Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-02-23 -- Roadmap revised (4 phases, 13 requirements mapped; descoped full C binding layer after babelizer research)
+Status: Phase 1 complete, ready to plan Phase 2
+Last activity: 2026-02-23 -- Phase 1 complete (fPIC Foundation: 22 libraries rebuilt, 151/151 tests pass)
 
-Progress: [..........] 0%
+Progress: [##........] 25%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: -
-- Total execution time: 0 hours
+- Total plans completed: 1
+- Average duration: 6 min
+- Total execution time: 0.1 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 1. fPIC Foundation | 1/1 | 6 min | 6 min |
 
 **Recent Trend:**
-- Last 5 plans: -
-- Trend: -
+- Last 5 plans: 01-01 (6 min)
+- Trend: baseline established
 
 *Updated after each plan completion*
 
@@ -51,6 +51,9 @@ Recent decisions affecting current work:
 - [Roadmap v2]: Descoped full C binding layer (old Phase 2); merged minimal test bindings into Python Validation phase
 - [Roadmap v2]: 4 phases from 13 requirements (was 5 phases from 14); CBIND-02 removed, CBIND-01/03/04 revised to minimal scope
 - [Roadmap v2]: Shared library build moves up to Phase 2 (was Phase 3) since C binding layer is no longer a prerequisite for the .so
+- [Phase 1]: Used conda gfortran 14.3.0 for fPIC rebuild (aligns with BMI wrapper compiler, replaces system gfortran 13.3.0)
+- [Phase 1]: 22 libraries (not 24 as research estimated) -- actual count matches original build exactly
+- [Phase 1]: Added build_fpic/ to .gitignore since compiled artifacts should not be version-controlled
 
 ### Pending Todos
 
@@ -58,12 +61,12 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Phase 1]: WRF-Hydro fPIC rebuild time unknown on this hardware (estimated 5-30 min)
+- [Phase 1 RESOLVED]: WRF-Hydro fPIC rebuild takes ~6 minutes on this WSL2 hardware (was estimated 5-30 min)
 - [Phase 3]: Minimal C binding layer scope -- exactly which 8-10 BMI functions to wrap for Python test needs to be determined during Phase 3 planning
 - [Phase 3]: mpi4py availability in wrfhydro-bmi env unknown -- affects MPI initialization strategy in Python test
 
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Roadmap revised after babelizer research, ready to plan Phase 1
+Stopped at: Completed 01-01-PLAN.md (Phase 1 fPIC Foundation complete)
 Resume file: None
