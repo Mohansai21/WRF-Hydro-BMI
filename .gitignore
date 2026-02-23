@@ -1,5 +1,6 @@
 # Build artifacts
 build/
+build_fpic/
 _build/
 *.o
 *.mod
@@ -21,7 +22,7 @@ Testing/
 
 # Claude Code
 .claude/
-.CLAUDE.md
+CLAUDE.md
 
 # IDE
 .vscode/
