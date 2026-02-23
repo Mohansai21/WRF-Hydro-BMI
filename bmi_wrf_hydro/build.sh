@@ -11,10 +11,13 @@
 #   build/  -> All compiled artifacts (.o, .mod, executables)
 #
 # Usage:
-#   ./build.sh          Build all (BMI module + minimal test + full test)
-#   ./build.sh minimal  Build only BMI module + minimal test
-#   ./build.sh full     Build only BMI module + full test
-#   ./build.sh clean    Remove all build artifacts
+#   ./build.sh              Build all (BMI module + minimal test + full test)
+#   ./build.sh minimal      Build only BMI module + minimal test
+#   ./build.sh full         Build only BMI module + full test
+#   ./build.sh clean        Remove all build artifacts
+#   ./build.sh --fpic       Build all using fPIC WRF-Hydro libraries
+#   ./build.sh --fpic full  Build full test using fPIC libraries
+#   ./build.sh --fpic clean Remove all build artifacts
 #
 # After build, run from bmi_wrf_hydro/ directory:
 #   mpirun --oversubscribe -np 1 ./build/bmi_minimal_test
@@ -23,7 +26,16 @@
 
 set -e  # Exit on any error
 
-BUILD_TARGET="${1:-all}"  # default: build all
+# --- Parse --fpic flag (before BUILD_TARGET) ---
+USE_FPIC="false"
+ARGS=()
+for arg in "$@"; do
+  case "$arg" in
+    --fpic) USE_FPIC="true" ;;
+    *) ARGS+=("$arg") ;;
+  esac
+done
+BUILD_TARGET="${ARGS[0]:-all}"  # default: build all
 
 # --- Conda Environment ---
 source ~/miniconda3/etc/profile.d/conda.sh
@@ -37,7 +49,20 @@ BUILD_DIR="${BMI_DIR}/build"
 
 # --- External Paths ---
 CONDA_P=/home/mohansai/miniconda3/envs/wrfhydro-bmi
-WRF_BUILD="${BMI_DIR}/../wrf_hydro_nwm_public/build"
+
+if [ "$USE_FPIC" = "true" ]; then
+  WRF_BUILD="${BMI_DIR}/../wrf_hydro_nwm_public/build_fpic"
+  echo "*** Using fPIC libraries from build_fpic/ ***"
+else
+  WRF_BUILD="${BMI_DIR}/../wrf_hydro_nwm_public/build"
+fi
+
+# Verify build directory exists when --fpic is used
+if [ "$USE_FPIC" = "true" ] && [ ! -d "$WRF_BUILD" ]; then
+  echo "ERROR: ${WRF_BUILD} not found. Run rebuild_fpic.sh first."
+  exit 1
+fi
+
 WRF_MODS="${WRF_BUILD}/mods"
 WRF_LIB="${WRF_BUILD}/lib"
 WRF_OBJ="${WRF_BUILD}/src/CMakeFiles/wrfhydro.dir/Land_models/NoahMP/IO_code"
