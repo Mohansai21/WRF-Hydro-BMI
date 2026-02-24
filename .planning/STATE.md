@@ -5,33 +5,34 @@
 See: .planning/PROJECT.md (updated 2026-02-23)
 
 **Core value:** WRF-Hydro must be callable from Python through a shared library -- gateway to Phase 2 (babelizer) and coupled simulations
-**Current focus:** Phase 1: fPIC Foundation
+**Current focus:** Phase 2: Shared Library + Install
 
 ## Current Position
 
 Phase: 2 of 4 (Shared Library + Install)
-Plan: 0 of ? in current phase
-Status: Phase 1 complete, ready to plan Phase 2
-Last activity: 2026-02-23 -- Phase 1 complete (fPIC Foundation: 22 libraries rebuilt, 151/151 tests pass)
+Plan: 1 of 2 in current phase
+Status: Plan 02-01 complete (build.sh --shared), Plan 02-02 next (CMake + pkg-config)
+Last activity: 2026-02-24 -- Plan 02-01 complete (libbmiwrfhydrof.so via build.sh, 151/151 tests pass)
 
-Progress: [##........] 25%
+Progress: [####......] 37%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 6 min
-- Total execution time: 0.1 hours
+- Total plans completed: 2
+- Average duration: 6.5 min
+- Total execution time: 0.2 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. fPIC Foundation | 1/1 | 6 min | 6 min |
+| 2. Shared Library + Install | 1/2 | 7 min | 7 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (6 min)
-- Trend: baseline established
+- Last 5 plans: 01-01 (6 min), 02-01 (7 min)
+- Trend: consistent ~6-7 min per plan
 
 *Updated after each plan completion*
 
@@ -54,6 +55,9 @@ Recent decisions affecting current work:
 - [Phase 1]: Used conda gfortran 14.3.0 for fPIC rebuild (aligns with BMI wrapper compiler, replaces system gfortran 13.3.0)
 - [Phase 1]: 22 libraries (not 24 as research estimated) -- actual count matches original build exactly
 - [Phase 1]: Added build_fpic/ to .gitignore since compiled artifacts should not be version-controlled
+- [Phase 2]: Use gfortran -shared (not mpif90 -shared) for creating .so -- mpif90 wrapper can strip --whole-archive linker flags
+- [Phase 2]: Recompile module_NoahMP_hrldas_driver.F and module_hrldas_netcdf_io.F with -fPIC -- CMake's POSITION_INDEPENDENT_CODE sets -fPIE for executable targets, -fPIC for library targets only
+- [Phase 2]: Extract MPI linker flags via mpif90 --showme:link and pass directly to gfortran for shared library linking
 
 ### Pending Todos
 
@@ -67,6 +71,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-23
-Stopped at: Completed 01-01-PLAN.md (Phase 1 fPIC Foundation complete)
+Last session: 2026-02-24
+Stopped at: Completed 02-01-PLAN.md (build.sh --shared producing libbmiwrfhydrof.so)
 Resume file: None

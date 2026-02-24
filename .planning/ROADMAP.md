@@ -45,7 +45,7 @@ Plans:
   5. The existing Fortran 151-test BMI suite still passes when linked against the shared library instead of static objects (no regression)
 **Plans:** 2 plans
 Plans:
-- [ ] 02-01-PLAN.md -- Add --shared flag to build.sh producing libbmiwrfhydrof.so with 151-test regression
+- [x] 02-01-PLAN.md -- Add --shared flag to build.sh producing libbmiwrfhydrof.so with 151-test regression
 - [ ] 02-02-PLAN.md -- Create CMake project, pkg-config template, build/install/verify shared library
 
 ### Phase 3: Python Validation
@@ -77,6 +77,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. fPIC Foundation | 1/1 | Complete    | 2026-02-23 |
-| 2. Shared Library + Install | 0/2 | Planning complete | - |
+| 2. Shared Library + Install | 1/2 | In Progress | - |
 | 3. Python Validation | 0/? | Not started | - |
 | 4. Documentation | 0/? | Not started | - |
