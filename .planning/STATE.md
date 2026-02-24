@@ -5,34 +5,34 @@
 See: .planning/PROJECT.md (updated 2026-02-23)
 
 **Core value:** WRF-Hydro must be callable from Python through a shared library -- gateway to Phase 2 (babelizer) and coupled simulations
-**Current focus:** Phase 2: Shared Library + Install
+**Current focus:** Phase 2 complete, ready to plan Phase 3
 
 ## Current Position
 
-Phase: 2 of 4 (Shared Library + Install)
-Plan: 1 of 2 in current phase
-Status: Plan 02-01 complete (build.sh --shared), Plan 02-02 next (CMake + pkg-config)
-Last activity: 2026-02-24 -- Plan 02-01 complete (libbmiwrfhydrof.so via build.sh, 151/151 tests pass)
+Phase: 2 of 4 (Shared Library + Install) -- COMPLETE
+Plan: 2 of 2 in current phase
+Status: Phase 2 complete, all plans executed
+Last activity: 2026-02-24 -- Plan 02-02 complete (CMake + pkg-config install, libbmiwrfhydrof.so in conda prefix)
 
-Progress: [####......] 37%
+Progress: [#####.....] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 6.5 min
-- Total execution time: 0.2 hours
+- Total plans completed: 3
+- Average duration: 7.7 min
+- Total execution time: 0.4 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. fPIC Foundation | 1/1 | 6 min | 6 min |
-| 2. Shared Library + Install | 1/2 | 7 min | 7 min |
+| 2. Shared Library + Install | 2/2 | 17 min | 8.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (6 min), 02-01 (7 min)
-- Trend: consistent ~6-7 min per plan
+- Last 5 plans: 01-01 (6 min), 02-01 (7 min), 02-02 (10 min)
+- Trend: consistent ~6-10 min per plan
 
 *Updated after each plan completion*
 
@@ -58,6 +58,10 @@ Recent decisions affecting current work:
 - [Phase 2]: Use gfortran -shared (not mpif90 -shared) for creating .so -- mpif90 wrapper can strip --whole-archive linker flags
 - [Phase 2]: Recompile module_NoahMP_hrldas_driver.F and module_hrldas_netcdf_io.F with -fPIC -- CMake's POSITION_INDEPENDENT_CODE sets -fPIE for executable targets, -fPIC for library targets only
 - [Phase 2]: Extract MPI linker flags via mpif90 --showme:link and pass directly to gfortran for shared library linking
+- [Phase 2]: Library named bmiwrfhydrof (not wrfhydro_bmi) to follow bmi-example-fortran bmi{model}f convention required by babelizer
+- [Phase 2]: Recompile WRF-Hydro driver .F source files directly in CMake add_library(SHARED) instead of linking pre-built .o files (CMAKE_POSITION_INDEPENDENT_CODE only for library targets)
+- [Phase 2]: Created hydro_stop_shim.f90 to resolve bare hydro_stop_ symbol pulled in by --whole-archive from dead code in module_reservoir_routing.F90
+- [Phase 2]: pkg-config Requires: bmif only (no WRF-Hydro .pc) because static libs baked into .so
 
 ### Pending Todos
 
@@ -72,5 +76,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Completed 02-01-PLAN.md (build.sh --shared producing libbmiwrfhydrof.so)
+Stopped at: Completed 02-02-PLAN.md (Phase 2 complete: CMake install + pkg-config)
 Resume file: None
