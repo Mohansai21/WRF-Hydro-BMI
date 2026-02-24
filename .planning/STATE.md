@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-23)
 
 **Core value:** WRF-Hydro must be callable from Python through a shared library -- gateway to Phase 2 (babelizer) and coupled simulations
-**Current focus:** Phase 3 COMPLETE -- libbmiwrfhydrof.so validated end-to-end from Python, ready for babelizer
+**Current focus:** All 4 phases COMPLETE -- shared library milestone delivered
 
 ## Current Position
 
-Phase: 3 of 4 (Python Validation) -- COMPLETE
-Plan: 2 of 2 in current phase -- COMPLETE
-Status: Phase 3 complete. All plans done (C binding + Python test). Ready for Phase 4 (documentation).
-Last activity: 2026-02-24 -- Plan 03-02 complete (8 pytest tests, all passing, Croton NY validated from Python)
+Phase: 4 of 4 (Documentation) -- COMPLETE
+Plan: 1 of 1 in current phase -- COMPLETE
+Status: All phases complete. Shared library milestone delivered. Doc 16 written (1,427 lines).
+Last activity: 2026-02-24 -- Phase 4 execution complete (Doc 16 created)
 
-Progress: [########..] 75%
+Progress: [##########] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 6.4 min
-- Total execution time: 0.5 hours
+- Total plans completed: 6
+- Average duration: 6.7 min
+- Total execution time: 0.7 hours
 
 **By Phase:**
 
@@ -30,10 +30,11 @@ Progress: [########..] 75%
 | 1. fPIC Foundation | 1/1 | 6 min | 6 min |
 | 2. Shared Library + Install | 2/2 | 17 min | 8.5 min |
 | 3. Python Validation | 2/2 | 9 min | 4.5 min |
+| 4. Documentation | 1/1 | 8 min | 8 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (6 min), 02-01 (7 min), 02-02 (10 min), 03-01 (5 min), 03-02 (4 min)
-- Trend: consistent ~5-10 min per plan, accelerating
+- Last 6 plans: 01-01 (6 min), 02-01 (7 min), 02-02 (10 min), 03-01 (5 min), 03-02 (4 min), 04-01 (8 min)
+- Trend: consistent ~5-10 min per plan
 
 *Updated after each plan completion*
 
@@ -71,10 +72,13 @@ Recent decisions affecting current work:
 - [Phase 3]: Streamflow physical range uses -1e-6 tolerance (not strict >= 0) for REAL->double conversion noise (~-2e-11)
 - [Phase 3]: MPI_Finalize called via libmpi ctypes handle in fixture teardown, not via bmi_finalize
 - [Phase 3]: Single session-scoped bmi_session fixture shared by all 8 tests (WRF-Hydro singleton constraint)
+- [Phase 4]: Doc 16 is self-contained -- reader can understand shared library milestone without reading all 15 prior docs
+- [Phase 4]: Babelizer readiness checklist has 7 runnable verification commands with expected outputs
+- [Phase 4]: SCHISM comparison uses side-by-side table format to highlight PyMT vs NextGen pathway differences
 
 ### Pending Todos
 
-None yet.
+None -- all 4 phases complete.
 
 ### Blockers/Concerns
 
@@ -85,5 +89,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Completed 03-02-PLAN.md (Python pytest: 8 tests, all passing, Croton NY validated from Python)
+Stopped at: Completed 04-01-PLAN.md -- All 4 phases complete, shared library milestone delivered
 Resume file: None
+Next action: Phase 2 of overall project (babelizer: babelize init babel.toml)

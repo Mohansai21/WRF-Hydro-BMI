@@ -33,7 +33,7 @@ The babelizer auto-generates its own 818-line `bmi_interoperability.f90` with fu
 
 ### Documentation
 
-- [ ] **DOC-01**: Full Doc 16 in `bmi_wrf_hydro/Docs/` covering shared library architecture, minimal C binding rationale (vs babelizer auto-generated layer), build instructions (CMake + build.sh), Python ctypes usage, babelizer readiness checklist, troubleshooting -- with emojis, ASCII/Mermaid diagrams, ML analogies per project style
+- [x] **DOC-01**: Full Doc 16 in `bmi_wrf_hydro/Docs/` covering shared library architecture, minimal C binding rationale (vs babelizer auto-generated layer), build instructions (CMake + build.sh), Python ctypes usage, babelizer readiness checklist, troubleshooting -- with emojis, ASCII/Mermaid diagrams, ML analogies per project style
 
 ## v2 Requirements
 
@@ -100,7 +100,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PYTEST-02 | Phase 3 | Complete |
 | PYTEST-03 | Phase 3 | Complete |
 | PYTEST-04 | Phase 3 | Complete |
-| DOC-01 | Phase 4 | Pending |
+| DOC-01 | Phase 4 | Complete |
 
 **Coverage:**
 - v1 requirements: 13 total
