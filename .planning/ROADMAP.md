@@ -43,7 +43,10 @@ Plans:
   3. `cmake --install` places `libwrfhydrobmi.so` in `$CONDA_PREFIX/lib/`, both `.mod` files (`bmiwrfhydrof.mod`, `wrfhydro_bmi_state_mod.mod`) in `$CONDA_PREFIX/include/`, and `.pc` file in `$CONDA_PREFIX/lib/pkgconfig/`
   4. `pkg-config --libs bmiwrfhydrof` returns correct linker flags (babelizer's Meson build will use this for `dependency('bmiwrfhydrof', method: 'pkg-config')`)
   5. The existing Fortran 151-test BMI suite still passes when linked against the shared library instead of static objects (no regression)
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 02-01-PLAN.md -- Add --shared flag to build.sh producing libbmiwrfhydrof.so with 151-test regression
+- [ ] 02-02-PLAN.md -- Create CMake project, pkg-config template, build/install/verify shared library
 
 ### Phase 3: Python Validation
 **Goal**: Python can load the shared library via ctypes, exercise key BMI functions through a minimal C binding layer, and produce validated results matching the Fortran test suite -- proving the .so works end-to-end before handing it to the babelizer
@@ -74,6 +77,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. fPIC Foundation | 1/1 | Complete    | 2026-02-23 |
-| 2. Shared Library + Install | 0/? | Not started | - |
+| 2. Shared Library + Install | 0/2 | Planning complete | - |
 | 3. Python Validation | 0/? | Not started | - |
 | 4. Documentation | 0/? | Not started | - |
