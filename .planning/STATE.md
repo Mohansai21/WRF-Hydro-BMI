@@ -5,22 +5,22 @@
 See: .planning/PROJECT.md (updated 2026-02-23)
 
 **Core value:** WRF-Hydro must be callable from Python through a shared library -- gateway to Phase 2 (babelizer) and coupled simulations
-**Current focus:** Phase 3 in progress, C binding layer complete, Python test next
+**Current focus:** Phase 3 COMPLETE -- libbmiwrfhydrof.so validated end-to-end from Python, ready for babelizer
 
 ## Current Position
 
-Phase: 3 of 4 (Python Validation)
-Plan: 1 of 2 in current phase -- COMPLETE
-Status: Plan 03-01 complete (C binding layer), Plan 03-02 next (Python pytest)
-Last activity: 2026-02-24 -- Plan 03-01 complete (10 bind(C) functions in libbmiwrfhydrof.so)
+Phase: 3 of 4 (Python Validation) -- COMPLETE
+Plan: 2 of 2 in current phase -- COMPLETE
+Status: Phase 3 complete. All plans done (C binding + Python test). Ready for Phase 4 (documentation).
+Last activity: 2026-02-24 -- Plan 03-02 complete (8 pytest tests, all passing, Croton NY validated from Python)
 
-Progress: [######....] 63%
+Progress: [########..] 75%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 7.0 min
+- Total plans completed: 5
+- Average duration: 6.4 min
 - Total execution time: 0.5 hours
 
 **By Phase:**
@@ -29,11 +29,11 @@ Progress: [######....] 63%
 |-------|-------|-------|----------|
 | 1. fPIC Foundation | 1/1 | 6 min | 6 min |
 | 2. Shared Library + Install | 2/2 | 17 min | 8.5 min |
-| 3. Python Validation | 1/2 | 5 min | 5 min |
+| 3. Python Validation | 2/2 | 9 min | 4.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (6 min), 02-01 (7 min), 02-02 (10 min), 03-01 (5 min)
-- Trend: consistent ~5-10 min per plan
+- Last 5 plans: 01-01 (6 min), 02-01 (7 min), 02-02 (10 min), 03-01 (5 min), 03-02 (4 min)
+- Trend: consistent ~5-10 min per plan, accelerating
 
 *Updated after each plan completion*
 
@@ -67,6 +67,10 @@ Recent decisions affecting current work:
 - [Phase 3]: f_to_c_string as subroutine with buffer length parameter (not function returning array) -- prevents stack overflow with large strings
 - [Phase 3]: Character-by-character copy in c_to_f_string instead of transfer() -- avoids compiler-specific issues
 - [Phase 3]: bmi_get_component_name takes buffer size n as integer(c_int), value -- follows C calling convention
+- [Phase 3]: Component name is 'WRF-Hydro v5.4.0 (NCAR)' (actual from Fortran wrapper), not 'WRF-Hydro BMI' as assumed
+- [Phase 3]: Streamflow physical range uses -1e-6 tolerance (not strict >= 0) for REAL->double conversion noise (~-2e-11)
+- [Phase 3]: MPI_Finalize called via libmpi ctypes handle in fixture teardown, not via bmi_finalize
+- [Phase 3]: Single session-scoped bmi_session fixture shared by all 8 tests (WRF-Hydro singleton constraint)
 
 ### Pending Todos
 
@@ -76,10 +80,10 @@ None yet.
 
 - [Phase 1 RESOLVED]: WRF-Hydro fPIC rebuild takes ~6 minutes on this WSL2 hardware (was estimated 5-30 min)
 - [Phase 3 RESOLVED]: Minimal C binding layer scope -- 10 BMI functions wrapped (register, initialize, update, finalize, get_component_name, get_current_time, get_var_grid, get_grid_size, get_var_nbytes, get_value_double)
-- [Phase 3]: mpi4py availability in wrfhydro-bmi env unknown -- affects MPI initialization strategy in Python test
+- [Phase 3 RESOLVED]: mpi4py not needed -- ctypes RTLD_GLOBAL preload of libmpi.so is sufficient for singleton serial case
 
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Completed 03-01-PLAN.md (C binding layer: 10 bind(C) functions in libbmiwrfhydrof.so)
+Stopped at: Completed 03-02-PLAN.md (Python pytest: 8 tests, all passing, Croton NY validated from Python)
 Resume file: None

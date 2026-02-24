@@ -26,10 +26,10 @@ The babelizer auto-generates its own 818-line `bmi_interoperability.f90` with fu
 
 ### Python Testing
 
-- [ ] **PYTEST-01**: Python ctypes test script loads `libwrfhydrobmi.so` and exercises full IRF cycle via the minimal C bindings: `register_bmi` -> `initialize` -> `update` (multiple steps) -> `get_value` -> `finalize`
-- [ ] **PYTEST-02**: Python test validates Croton NY channel streamflow values match the Fortran 151-test suite reference output (bit-for-bit or within tolerance)
-- [ ] **PYTEST-03**: MPI `RTLD_GLOBAL` requirement handled via `ctypes.CDLL("libmpi.so", ctypes.RTLD_GLOBAL)` before loading BMI library (prevents Open MPI segfault)
-- [ ] **PYTEST-04**: Python test queries grid sizes dynamically from BMI functions (`get_grid_size`, `get_var_nbytes`) instead of hardcoding Croton NY dimensions
+- [x] **PYTEST-01**: Python ctypes test script loads `libwrfhydrobmi.so` and exercises full IRF cycle via the minimal C bindings: `register_bmi` -> `initialize` -> `update` (multiple steps) -> `get_value` -> `finalize`
+- [x] **PYTEST-02**: Python test validates Croton NY channel streamflow values match the Fortran 151-test suite reference output (bit-for-bit or within tolerance)
+- [x] **PYTEST-03**: MPI `RTLD_GLOBAL` requirement handled via `ctypes.CDLL("libmpi.so", ctypes.RTLD_GLOBAL)` before loading BMI library (prevents Open MPI segfault)
+- [x] **PYTEST-04**: Python test queries grid sizes dynamically from BMI functions (`get_grid_size`, `get_var_nbytes`) instead of hardcoding Croton NY dimensions
 
 ### Documentation
 
@@ -96,10 +96,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CBIND-01 | Phase 3 | Complete |
 | CBIND-03 | Phase 3 | Complete |
 | CBIND-04 | Phase 3 | Complete |
-| PYTEST-01 | Phase 3 | Pending |
-| PYTEST-02 | Phase 3 | Pending |
-| PYTEST-03 | Phase 3 | Pending |
-| PYTEST-04 | Phase 3 | Pending |
+| PYTEST-01 | Phase 3 | Complete |
+| PYTEST-02 | Phase 3 | Complete |
+| PYTEST-03 | Phase 3 | Complete |
+| PYTEST-04 | Phase 3 | Complete |
 | DOC-01 | Phase 4 | Pending |
 
 **Coverage:**
