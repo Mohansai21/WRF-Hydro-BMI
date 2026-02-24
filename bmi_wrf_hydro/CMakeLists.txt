@@ -165,7 +165,15 @@ endif()
 # Define key directories within the fPIC build
 set(WRF_LIB_DIR "${WRF_HYDRO_BUILD_DIR}/lib")
 set(WRF_MOD_DIR "${WRF_HYDRO_BUILD_DIR}/mods")
-set(WRF_OBJ_DIR "${WRF_HYDRO_BUILD_DIR}/src/CMakeFiles/wrfhydro.dir/Land_models/NoahMP/IO_code")
+
+# WRF-Hydro source directory (for recompiling driver .o files with -fPIC)
+# The land_driver_ini/exe subroutines live in module_NoahMP_hrldas_driver.F
+# which is compiled as part of the wrfhydro executable target (not a library).
+# CMake's POSITION_INDEPENDENT_CODE only applies to library targets, so the
+# executable .o files were compiled with -fPIE (not -fPIC). We must recompile
+# them from source with -fPIC to include in our shared library.
+set(WRF_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../wrf_hydro_nwm_public/src")
+set(WRF_IO_SRC_DIR "${WRF_SRC_DIR}/Land_models/NoahMP/IO_code")
 
 # Verify subdirectories exist
 if(NOT EXISTS "${WRF_LIB_DIR}")
@@ -248,11 +256,33 @@ endif()
 # Naming follows bmi-example-fortran: bmi{model}f -> bmiwrfhydrof
 # ============================================================================
 
-# Create shared library from our BMI wrapper source
-add_library(${bmi_name} SHARED src/bmi_wrf_hydro.f90)
+# Create shared library from our BMI wrapper source AND the two WRF-Hydro
+# driver source files that contain land_driver_ini/exe subroutines.
+#
+# These two files (module_NoahMP_hrldas_driver.F and module_hrldas_netcdf_io.F)
+# are part of WRF-Hydro's executable target, not a library target. CMake's
+# POSITION_INDEPENDENT_CODE=ON only applies to library targets, so the .o files
+# in build_fpic/src/ were compiled with -fPIE (not -fPIC). We recompile from
+# source with -fPIC by including them in our SHARED library target.
+#
+# We also include src/hydro_stop_shim.f90 which provides a bare external
+# `hydro_stop` subroutine. WRF-Hydro has one call site (nwmCheck in
+# module_reservoir_routing.F90) that calls hydro_stop without `use module_hydro_stop`,
+# generating a reference to the bare symbol `hydro_stop_`. This is dead code in
+# normal WRF-Hydro builds, but --whole-archive pulls it into our .so. The shim
+# delegates to the module version to resolve the linker error.
+add_library(${bmi_name} SHARED
+  src/bmi_wrf_hydro.f90
+  src/hydro_stop_shim.f90
+  ${WRF_IO_SRC_DIR}/module_NoahMP_hrldas_driver.F
+  ${WRF_IO_SRC_DIR}/module_hrldas_netcdf_io.F
+)
 
-# Compiler flags for our source
-target_compile_options(${bmi_name} PRIVATE ${BMI_FORTRAN_FLAGS})
+# Compiler flags for all sources in this target (including the WRF-Hydro files)
+target_compile_options(${bmi_name} PRIVATE
+  ${BMI_FORTRAN_FLAGS}
+  -w    # Suppress warnings from WRF-Hydro source files (not our code)
+)
 
 # Include directories for module file resolution
 target_include_directories(${bmi_name} PRIVATE
@@ -263,14 +293,11 @@ target_include_directories(${bmi_name} PRIVATE
 )
 
 # Link dependencies:
-#   1. Two specific .o files containing driver subroutines our BMI wrapper calls
-#   2. All 22 WRF-Hydro static libs wrapped in --whole-archive to pull ALL symbols
-#   3. BMI Fortran library (libbmif.so)
-#   4. MPI Fortran libraries
-#   5. NetCDF libraries
+#   1. All 22 WRF-Hydro static libs wrapped in --whole-archive to pull ALL symbols
+#   2. BMI Fortran library (libbmif.so)
+#   3. MPI Fortran libraries
+#   4. NetCDF libraries
 target_link_libraries(${bmi_name}
-  ${WRF_OBJ_DIR}/module_NoahMP_hrldas_driver.F.o
-  ${WRF_OBJ_DIR}/module_hrldas_netcdf_io.F.o
   -Wl,--whole-archive
   ${WRF_STATIC_LIBS}
   -Wl,--no-whole-archive
