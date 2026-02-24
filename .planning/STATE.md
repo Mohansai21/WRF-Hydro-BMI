@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-23)
 
 **Core value:** WRF-Hydro must be callable from Python through a shared library -- gateway to Phase 2 (babelizer) and coupled simulations
-**Current focus:** Phase 2 complete, ready to plan Phase 3
+**Current focus:** Phase 3 in progress, C binding layer complete, Python test next
 
 ## Current Position
 
-Phase: 2 of 4 (Shared Library + Install) -- COMPLETE
-Plan: 2 of 2 in current phase
-Status: Phase 2 complete, all plans executed
-Last activity: 2026-02-24 -- Plan 02-02 complete (CMake + pkg-config install, libbmiwrfhydrof.so in conda prefix)
+Phase: 3 of 4 (Python Validation)
+Plan: 1 of 2 in current phase -- COMPLETE
+Status: Plan 03-01 complete (C binding layer), Plan 03-02 next (Python pytest)
+Last activity: 2026-02-24 -- Plan 03-01 complete (10 bind(C) functions in libbmiwrfhydrof.so)
 
-Progress: [#####.....] 50%
+Progress: [######....] 63%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 7.7 min
-- Total execution time: 0.4 hours
+- Total plans completed: 4
+- Average duration: 7.0 min
+- Total execution time: 0.5 hours
 
 **By Phase:**
 
@@ -29,10 +29,11 @@ Progress: [#####.....] 50%
 |-------|-------|-------|----------|
 | 1. fPIC Foundation | 1/1 | 6 min | 6 min |
 | 2. Shared Library + Install | 2/2 | 17 min | 8.5 min |
+| 3. Python Validation | 1/2 | 5 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (6 min), 02-01 (7 min), 02-02 (10 min)
-- Trend: consistent ~6-10 min per plan
+- Last 5 plans: 01-01 (6 min), 02-01 (7 min), 02-02 (10 min), 03-01 (5 min)
+- Trend: consistent ~5-10 min per plan
 
 *Updated after each plan completion*
 
@@ -62,6 +63,10 @@ Recent decisions affecting current work:
 - [Phase 2]: Recompile WRF-Hydro driver .F source files directly in CMake add_library(SHARED) instead of linking pre-built .o files (CMAKE_POSITION_INDEPENDENT_CODE only for library targets)
 - [Phase 2]: Created hydro_stop_shim.f90 to resolve bare hydro_stop_ symbol pulled in by --whole-archive from dead code in module_reservoir_routing.F90
 - [Phase 2]: pkg-config Requires: bmif only (no WRF-Hydro .pc) because static libs baked into .so
+- [Phase 3]: Singleton C binding pattern (module-level the_model + is_registered guard) -- WRF-Hydro cannot support multiple instances
+- [Phase 3]: f_to_c_string as subroutine with buffer length parameter (not function returning array) -- prevents stack overflow with large strings
+- [Phase 3]: Character-by-character copy in c_to_f_string instead of transfer() -- avoids compiler-specific issues
+- [Phase 3]: bmi_get_component_name takes buffer size n as integer(c_int), value -- follows C calling convention
 
 ### Pending Todos
 
@@ -70,11 +75,11 @@ None yet.
 ### Blockers/Concerns
 
 - [Phase 1 RESOLVED]: WRF-Hydro fPIC rebuild takes ~6 minutes on this WSL2 hardware (was estimated 5-30 min)
-- [Phase 3]: Minimal C binding layer scope -- exactly which 8-10 BMI functions to wrap for Python test needs to be determined during Phase 3 planning
+- [Phase 3 RESOLVED]: Minimal C binding layer scope -- 10 BMI functions wrapped (register, initialize, update, finalize, get_component_name, get_current_time, get_var_grid, get_grid_size, get_var_nbytes, get_value_double)
 - [Phase 3]: mpi4py availability in wrfhydro-bmi env unknown -- affects MPI initialization strategy in Python test
 
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Completed 02-02-PLAN.md (Phase 2 complete: CMake install + pkg-config)
+Stopped at: Completed 03-01-PLAN.md (C binding layer: 10 bind(C) functions in libbmiwrfhydrof.so)
 Resume file: None

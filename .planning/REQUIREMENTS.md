@@ -20,9 +20,9 @@ Requirements for the shared library milestone. Each maps to roadmap phases.
 
 The babelizer auto-generates its own 818-line `bmi_interoperability.f90` with full ISO_C_BINDING wrappers for all 41 BMI functions. We do NOT write that layer. Instead, we write a minimal C binding (~100-200 lines) solely for pre-babelizer Python ctypes validation. This is test infrastructure, not production code.
 
-- [ ] **CBIND-01**: Minimal `bmi_wrf_hydro_c.f90` with `bind(C)` wrappers for 8-10 key BMI functions: `register_bmi`, `initialize`, `update`, `update_until`, `finalize`, `get_component_name`, `get_value_double` (for channel streamflow), `get_grid_size`, `get_var_nbytes`, `get_current_time`
-- [ ] **CBIND-03**: String conversion helpers (`c_to_f_string`, `f_to_c_string`) for the minimal wrapper to handle null-terminated C strings to/from Fortran character arrays
-- [ ] **CBIND-04**: Singleton guard in `register_bmi` prevents second allocation (WRF-Hydro module globals cannot support multiple instances; returns error code on second call)
+- [x] **CBIND-01**: Minimal `bmi_wrf_hydro_c.f90` with `bind(C)` wrappers for 8-10 key BMI functions: `register_bmi`, `initialize`, `update`, `update_until`, `finalize`, `get_component_name`, `get_value_double` (for channel streamflow), `get_grid_size`, `get_var_nbytes`, `get_current_time`
+- [x] **CBIND-03**: String conversion helpers (`c_to_f_string`, `f_to_c_string`) for the minimal wrapper to handle null-terminated C strings to/from Fortran character arrays
+- [x] **CBIND-04**: Singleton guard in `register_bmi` prevents second allocation (WRF-Hydro module globals cannot support multiple instances; returns error code on second call)
 
 ### Python Testing
 
@@ -93,9 +93,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BUILD-03 | Phase 2 | Complete |
 | BUILD-04 | Phase 2 | Complete |
 | BUILD-05 | Phase 2 | Complete |
-| CBIND-01 | Phase 3 | Pending |
-| CBIND-03 | Phase 3 | Pending |
-| CBIND-04 | Phase 3 | Pending |
+| CBIND-01 | Phase 3 | Complete |
+| CBIND-03 | Phase 3 | Complete |
+| CBIND-04 | Phase 3 | Complete |
 | PYTEST-01 | Phase 3 | Pending |
 | PYTEST-02 | Phase 3 | Pending |
 | PYTEST-03 | Phase 3 | Pending |

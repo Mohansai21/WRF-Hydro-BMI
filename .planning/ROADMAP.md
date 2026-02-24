@@ -60,7 +60,7 @@ Plans:
   5. Grid sizes and array dimensions are queried dynamically from BMI functions (`get_grid_size`, `get_var_nbytes`) -- no hardcoded Croton NY dimensions in the test
 **Plans:** 2 plans
 Plans:
-- [ ] 03-01-PLAN.md -- Create bmi_wrf_hydro_c.f90 with bind(C) wrappers + update build systems + verify C symbols
+- [x] 03-01-PLAN.md -- Create bmi_wrf_hydro_c.f90 with bind(C) wrappers + update build systems + verify C symbols
 - [ ] 03-02-PLAN.md -- Create Python pytest test with smoke and full modes + validate Croton NY results
 
 ### Phase 4: Documentation
@@ -81,5 +81,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. fPIC Foundation | 1/1 | Complete    | 2026-02-23 |
 | 2. Shared Library + Install | 2/2 | Complete | 2026-02-24 |
-| 3. Python Validation | 0/2 | Not started | - |
+| 3. Python Validation | 1/2 | In Progress | - |
 | 4. Documentation | 0/? | Not started | - |
