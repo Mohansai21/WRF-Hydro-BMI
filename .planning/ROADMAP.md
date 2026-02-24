@@ -15,7 +15,7 @@ This roadmap delivers `libwrfhydrobmi.so` -- a shared library that makes WRF-Hyd
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: fPIC Foundation** - Rebuild WRF-Hydro static libraries with position-independent code
-- [ ] **Phase 2: Shared Library + Install** - CMake and build.sh producing libwrfhydrobmi.so with conda install and pkg-config discovery
+- [x] **Phase 2: Shared Library + Install** - CMake and build.sh producing libwrfhydrobmi.so with conda install and pkg-config discovery
 - [ ] **Phase 3: Python Validation** - Minimal C bindings + Python ctypes test exercising BMI lifecycle against Croton NY data
 - [ ] **Phase 4: Documentation** - Doc 16 covering shared library architecture, babelizer readiness, and Python usage
 
@@ -46,7 +46,7 @@ Plans:
 **Plans:** 2 plans
 Plans:
 - [x] 02-01-PLAN.md -- Add --shared flag to build.sh producing libbmiwrfhydrof.so with 151-test regression
-- [ ] 02-02-PLAN.md -- Create CMake project, pkg-config template, build/install/verify shared library
+- [x] 02-02-PLAN.md -- Create CMake project, pkg-config template, build/install/verify shared library
 
 ### Phase 3: Python Validation
 **Goal**: Python can load the shared library via ctypes, exercise key BMI functions through a minimal C binding layer, and produce validated results matching the Fortran test suite -- proving the .so works end-to-end before handing it to the babelizer
@@ -58,7 +58,10 @@ Plans:
   3. Croton NY channel streamflow values retrieved via Python match the Fortran 151-test suite reference output (within floating-point tolerance)
   4. MPI initialization is handled correctly (via `RTLD_GLOBAL` preload of `libmpi.so`) without segfault
   5. Grid sizes and array dimensions are queried dynamically from BMI functions (`get_grid_size`, `get_var_nbytes`) -- no hardcoded Croton NY dimensions in the test
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 03-01-PLAN.md -- Create bmi_wrf_hydro_c.f90 with bind(C) wrappers + update build systems + verify C symbols
+- [ ] 03-02-PLAN.md -- Create Python pytest test with smoke and full modes + validate Croton NY results
 
 ### Phase 4: Documentation
 **Goal**: Complete reference documentation covering the shared library architecture, babelizer readiness, minimal C binding rationale, and Python usage
@@ -77,6 +80,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. fPIC Foundation | 1/1 | Complete    | 2026-02-23 |
-| 2. Shared Library + Install | 1/2 | In Progress | - |
-| 3. Python Validation | 0/? | Not started | - |
+| 2. Shared Library + Install | 2/2 | Complete | 2026-02-24 |
+| 3. Python Validation | 0/2 | Not started | - |
 | 4. Documentation | 0/? | Not started | - |
