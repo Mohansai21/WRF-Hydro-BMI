@@ -1,384 +1,468 @@
 # Architecture Patterns
 
-**Domain:** Fortran BMI shared library with ISO_C_BINDING wrappers and Python interoperability
-**Researched:** 2026-02-23
-**Confidence:** HIGH (based on direct analysis of two working reference implementations in the codebase)
+**Domain:** Babelizing a Fortran BMI shared library into a PyMT Python package
+**Researched:** 2026-02-24
+**Confidence:** HIGH (verified against pymt_heatf reference implementation, babelizer source templates, official documentation)
 
 ## Recommended Architecture
 
-The architecture follows the established CSDMS/NOAA-OWP pattern used by both `bmi-example-fortran` and `LynkerIntel/SCHISM_BMI`. The key insight is that there are three distinct layers between Python and WRF-Hydro, each with a single responsibility.
+The babelizer integration follows a well-defined data flow from `babel.toml` configuration through auto-generated code to a working Python package. The architecture has **three distinct phases**: configuration, code generation, and build/install. Each phase produces artifacts consumed by the next.
+
+The critical insight verified by examining the pymt_heatf reference implementation is that **the babelizer does NOT use our existing C binding layer** (`bmi_wrf_hydro_c.f90`). Instead, it auto-generates its own complete `bmi_interoperability.f90` file (~818 lines) with a multi-instance "box" pattern wrapping all 41 BMI functions. Our C binding layer (10 functions, singleton pattern) was test infrastructure only.
 
 ```
-                    PYTHON TEST (test_bmi_wrfhydro.py)
-                         |
-                    ctypes.cdll.LoadLibrary("libwrfhydro_bmi.so")
-                         |
-                    ctypes FFI calls (C ABI)
-                         |
-    +---------------------------------------------------------+
-    |  Layer 3: ISO_C_BINDING WRAPPER (bmi_interop.f90)       |
-    |  - bind(C, name="...") free functions                   |
-    |  - "box" pattern: opaque handle (c_ptr) -> Fortran type |
-    |  - String conversion: c_to_f_string / f_to_c_string     |
-    |  - register_bmi() creates the model instance             |
-    +---------------------------------------------------------+
-                         |
-                    Fortran procedure calls (class method dispatch)
-                         |
-    +---------------------------------------------------------+
-    |  Layer 2: BMI WRAPPER (bmi_wrf_hydro.f90) [EXISTING]    |
-    |  - type(bmi_wrf_hydro) extends(bmi)                     |
-    |  - All 41 BMI functions implemented                      |
-    |  - 55 procedure bindings (type-specific variants)        |
-    |  - CSDMS Standard Names mapping                          |
-    +---------------------------------------------------------+
-                         |
-                    Fortran USE + subroutine calls
-                         |
-    +---------------------------------------------------------+
-    |  Layer 1: WRF-HYDRO MODEL (22 static libraries)         |
-    |  - land_driver_ini/exe, HYDRO_ini/exe                   |
-    |  - Module globals: SMOIS, SFCRUNOFF, rt_domain, etc.    |
-    |  - 86 .mod files for module interfaces                   |
-    +---------------------------------------------------------+
+DATA FLOW: babel.toml -> pymt_wrfhydro Python Package
+
+PHASE 1: CONFIGURATION
+========================
+    babel.toml                          WRF-Hydro Prerequisites
+    +-----------------------+           +---------------------------+
+    | [library.WrfHydroF]   |           | libbmiwrfhydrof.so        |
+    | language = "fortran"  |           | bmiwrfhydrof.pc           |
+    | library = "bmiwrfhydrof"|         | bmiwrfhydrof.mod          |
+    | entry_point = "bmi_wrf_hydro" |   | (installed to $CONDA_PREFIX)|
+    +-----------------------+           +---------------------------+
+              |                                    |
+              v                                    |
+PHASE 2: CODE GENERATION                          |
+========================                           |
+    $ babelize init babel.toml                     |
+              |                                    |
+              v                                    |
+    pymt_wrfhydro/  (auto-generated)               |
+    +------------------------------------------+   |
+    | pymt_wrfhydro/                            |   |
+    |   __init__.py         (imports WrfHydroF) |   |
+    |   _bmi.py             (re-exports class)  |   |
+    |   lib/                                    |   |
+    |     __init__.py                           |   |
+    |     bmi_interoperability.f90  (818 lines) |---+  <-- links against .so
+    |     bmi_interoperability.h    (C header)  |   |
+    |     wrfhydrof.pyx     (Cython wrapper)    |   |
+    | meta/WrfHydroF/                           |   |
+    |   api.yaml, info.yaml, run.yaml, etc.     |   |
+    | meson.build           (build system)      |---+  <-- pkg-config discovery
+    | pyproject.toml        (Python packaging)  |
+    | babel.toml            (preserved config)  |
+    +------------------------------------------+
+              |
+              v
+PHASE 3: BUILD & INSTALL
+========================
+    $ pip install . --no-build-isolation
+              |
+              v
+    Meson Build System
+    +------------------------------------------+
+    | 1. pkg-config --libs bmiwrfhydrof        |---> Finds libbmiwrfhydrof.so
+    | 2. pkg-config --libs bmif                |---> Finds libbmif.so
+    | 3. Compile bmi_interoperability.f90      |---> .o file
+    | 4. Cython compile wrfhydrof.pyx -> .c    |---> C extension
+    | 5. Link .o + .c + deps -> wrfhydrof.so   |---> Python extension module
+    | 6. Install to site-packages/pymt_wrfhydro|
+    +------------------------------------------+
+              |
+              v
+    RESULT: Working Python Package
+    +------------------------------------------+
+    | >>> from pymt_wrfhydro import WrfHydroF   |
+    | >>> m = WrfHydroF()                       |
+    | >>> m.initialize("config.nml")            |
+    | >>> m.update()                             |
+    | >>> vals = m.get_value("channel_water_...") |
+    | >>> m.finalize()                           |
+    +------------------------------------------+
 ```
 
 ### Component Boundaries
 
-| Component | File(s) | Responsibility | Communicates With |
-|-----------|---------|----------------|-------------------|
-| **WRF-Hydro Model** | 22 `.a` libraries + 86 `.mod` files | Physics simulation (Noah-MP, routing, channel) | Layer 2 via Fortran `use` modules |
-| **BMI Wrapper** | `src/bmi_wrf_hydro.f90` (1,919 lines) | Implements all 41 BMI functions, maps CSDMS names, manages IRF lifecycle | Layer 1 (downstream) + Layer 3 (upstream) |
-| **C Binding Layer** | `src/bmi_interop.f90` (~600-800 lines, NEW) | ISO_C_BINDING wrappers: opaque handle, string conversion, C ABI | Layer 2 (downstream) + Python/C (upstream) |
-| **Register Function** | Inside `bmi_interop.f90` | Factory: allocates `bmi_wrf_hydro` instance, returns opaque `c_ptr` handle | Called first by any C/Python consumer |
-| **Shared Library** | `libwrfhydro_bmi.so` (CMake/build.sh output) | Packages Layers 2+3 + links Layer 1 into one loadable binary | Loaded by Python ctypes or babelizer |
-| **Python Test** | `tests/test_bmi_wrfhydro.py` (~200-300 lines, NEW) | Exercises all BMI functions via ctypes, validates against Croton NY data | Loads the .so, calls C ABI functions |
-| **CMake Build** | `CMakeLists.txt` (650 lines, EXISTING) | Compiles .so, links 22 WRF-Hydro libs + BMI + MPI + NetCDF | Produces the .so and test executable |
+| Component | Files | Responsibility | Communicates With |
+|-----------|-------|----------------|-------------------|
+| **babel.toml** | 1 file (we write) | Configuration: library name, entry point, package name, build settings | babelize init command |
+| **babelize init** | babelizer CLI tool | Template rendering: generates entire pymt_wrfhydro package from babel.toml + Jinja2 templates | babel.toml (input), pymt_wrfhydro/ directory (output) |
+| **bmi_interoperability.f90** | 1 file (auto-generated) | C interop bridge: wraps ALL 41 BMI functions with ISO_C_BINDING bind(C), multi-instance box pattern | `use bmiwrfhydrof` -> our BMI module; linked into Cython extension |
+| **bmi_interoperability.h** | 1 file (auto-generated) | C header: declares all functions from .f90 for Cython `cdef extern` | Consumed by .pyx file |
+| **wrfhydrof.pyx** | 1 file (auto-generated) | Cython extension: Python class WrfHydroF with all BMI methods, type-dispatched get/set, numpy array I/O | Calls C functions from bmi_interoperability.h; imports numpy |
+| **meson.build** | 1 file (auto-generated) | Build system: discovers deps via pkg-config, compiles Fortran + Cython, builds Python extension | pkg-config -> bmiwrfhydrof.pc, bmif.pc |
+| **pyproject.toml** | 1 file (auto-generated) | Python packaging: meson-python backend, dependencies, pymt.plugins entry point | pip, meson-python build backend |
+| **meta/WrfHydroF/** | 5 files (we write) | Model metadata: API description, parameters, config, run settings | PyMT framework for model registration |
+| **libbmiwrfhydrof.so** | 1 file (pre-existing) | Fortran shared library with all 41 BMI functions + 22 WRF-Hydro static libs baked in | Linked by Meson at build time; loaded at Python runtime |
+| **bmiwrfhydrof.pc** | 1 file (pre-existing) | pkg-config discovery: tells Meson where to find .so and .mod files | Meson `dependency('bmiwrfhydrof', method: 'pkg-config')` |
 
-### Data Flow
+### Data Flow: From Python Call to Fortran Execution
 
-**Direction: Python --> C ABI --> Fortran OOP --> WRF-Hydro globals**
-
-```
-Python (test_bmi_wrfhydro.py)
-  |
-  | lib = ctypes.cdll.LoadLibrary("libwrfhydro_bmi.so")
-  | handle = ctypes.c_void_p()
-  | lib.register_bmi(ctypes.byref(handle))
-  | lib.initialize(handle, config_path.encode())
-  | lib.update(handle)
-  | lib.get_value_double(handle, var_name.encode(), dest_array)
-  |
-  v
-bmi_interop.f90 (ISO_C_BINDING layer)
-  |
-  | type(box), pointer :: bmi_box
-  | call c_f_pointer(this, bmi_box)          -- unwrap opaque handle
-  | f_str = c_to_f_string(name)              -- C string -> Fortran string
-  | bmi_status = bmi_box%ptr%get_value_double(f_str, dest(:num_items))
-  |
-  v
-bmi_wrf_hydro.f90 (BMI wrapper)
-  |
-  | use module_noahmp_hrldas_driver, only: SMOIS, ...
-  | use module_RT_data, only: rt_domain
-  | dest(1:n) = dble(reshape(SMOIS(...), [...]))  -- REAL -> double, 2D -> 1D
-  |
-  v
-WRF-Hydro module globals (persistent Fortran state)
-```
-
-**Reverse direction (set_value):**
-```
-Python: lib.set_value_double(handle, name, src_array)
-  -> bmi_interop.f90: converts C types, calls bmi_box%ptr%set_value_double(...)
-    -> bmi_wrf_hydro.f90: RAINBL(1:ix, 1:jx) = reshape(real(src), [ix, jx])
-      -> WRF-Hydro RAINBL module global is modified in-place
-```
-
-## The "Box" Pattern (Critical Architecture Decision)
-
-**Confidence:** HIGH -- this is the exact pattern used by SCHISM_BMI (bmischism.f90 lines 1701-1727) and documented in the iso_c_fortran_bmi library by NOAA-OWP.
-
-### The Problem
-Fortran's polymorphic types (`class(bmi_wrf_hydro)`) cannot be directly passed across the C ABI boundary. C has no concept of Fortran class dispatch tables (vtables). Python's ctypes can only work with C-compatible types.
-
-### The Solution: Opaque Handle via Box Type
-
-```fortran
-! In bmi_interop.f90:
-type box
-  class(bmi), pointer :: ptr => null()
-end type
-
-! register_bmi creates the instance and returns an opaque handle
-function register_bmi(this) result(bmi_status) bind(C, name="register_bmi")
-  type(c_ptr) :: this          ! void** from C perspective
-  type(bmi_wrf_hydro), pointer :: bmi_model
-  type(box), pointer :: bmi_box
-
-  allocate(bmi_wrf_hydro :: bmi_model)   ! Create the BMI instance
-  allocate(bmi_box)                       ! Create the box
-  bmi_box%ptr => bmi_model               ! Point box at instance
-  this = c_loc(bmi_box)                  ! Return address of box
-  bmi_status = BMI_SUCCESS
-end function
-
-! Every subsequent call unwraps the handle
-function initialize(this, config_file) result(bmi_status) bind(C, name="initialize")
-  type(c_ptr) :: this
-  type(box), pointer :: bmi_box
-  call c_f_pointer(this, bmi_box)        ! Recover the box from the handle
-  bmi_status = bmi_box%ptr%initialize(f_file)  ! Call the actual BMI method
-end function
-```
-
-**In Python:**
-```python
-import ctypes
-lib = ctypes.cdll.LoadLibrary("./libwrfhydro_bmi.so")
-handle = ctypes.c_void_p()
-lib.register_bmi(ctypes.byref(handle))     # handle is now the opaque box pointer
-lib.initialize(handle, b"/path/to/config")  # pass handle to every call
-```
-
-### Why This Pattern (Not Alternatives)
-
-| Approach | Verdict | Reason |
-|----------|---------|--------|
-| **Box pattern** (SCHISM/NOAA-OWP) | USE THIS | Proven in production (NextGen, SCHISM_BMI), handles polymorphism, babelizer expects it |
-| Module-level singleton | Rejected | Cannot support multiple model instances, breaks if babelizer creates two instances |
-| Direct C struct mapping | Rejected | Cannot represent Fortran class dispatch, lose polymorphism |
-| Cython/f2py wrappers | Rejected | Adds build complexity, babelizer uses ctypes/cffi not Cython |
-
-## File Organization Pattern
+When a Python user calls `m.get_value("channel_water__volume_flow_rate", buffer)`, the data flows through 4 layers:
 
 ```
-bmi_wrf_hydro/
-  src/
-    bmi_wrf_hydro.f90           # [EXISTING] BMI wrapper (Layer 2)
-    bmi_interop.f90             # [NEW] ISO_C_BINDING wrappers (Layer 3)
-  tests/
-    bmi_wrf_hydro_test.f90      # [EXISTING] Fortran test (151 tests)
-    bmi_minimal_test.f90        # [EXISTING] Fortran smoke test
-    test_bmi_wrfhydro.py        # [NEW] Python ctypes test
-  build/                        # [EXISTING] Build artifacts
-  CMakeLists.txt                # [EXISTING, UPDATE] Add bmi_interop.f90 to sources
-  build.sh                      # [EXISTING, UPDATE] Add bmi_interop.f90 to compile
+Layer 4: Python (user code)
+  m.get_value("channel_water__volume_flow_rate", buffer)
+       |
+       v
+Layer 3: Cython (wrfhydrof.pyx / wrfhydrof.cpython-3xx-x86_64-linux-gnu.so)
+  WrfHydroF.get_value(self, var_name, buffer):
+    - Queries var type via bmi_get_var_type()
+    - Dispatches to bmi_get_value_double() for "double precision"
+    - Fills numpy buffer with data from C double array
+       |
+       v
+Layer 2: Fortran C-interop (bmi_interoperability.f90, compiled into extension)
+  bmi_get_value_double(model_index, name, dest):
+    - Converts C string to Fortran string
+    - Calls model_array(model_index)%get_value_double(name, dest)
+    - Returns BMI_SUCCESS/BMI_FAILURE as int
+       |
+       v
+Layer 1: Fortran BMI wrapper (libbmiwrfhydrof.so)
+  bmi_wrf_hydro%get_value_double(name, dest):
+    - Maps CSDMS name to internal WRF-Hydro array
+    - Copies from rt_domain(1)%QLINK(:,1) to dest(:)
+    - Returns BMI_SUCCESS
+       |
+       v
+Layer 0: WRF-Hydro internals (22 static libs baked into .so)
+  rt_domain(1)%QLINK(:,1)  -- streamflow at all channel reaches
 ```
-
-**Why this layout:** The C binding layer goes in `src/` alongside the BMI wrapper because they are both part of the shared library. The Python test goes in `tests/` because it is a consumer of the library, not a component of it.
 
 ## Patterns to Follow
 
-### Pattern 1: Separate Fortran BMI from C Bindings
+### Pattern 1: entry_point Maps to Fortran Type Name
 
-**What:** Keep `bmi_wrf_hydro.f90` (pure Fortran BMI) and `bmi_interop.f90` (C binding wrappers) as separate files/modules.
+**What:** The `entry_point` field in babel.toml is the **Fortran derived type name** that extends BMI, NOT a function name or module name.
 
-**When:** Always. This is the CSDMS ecosystem convention.
+**Verified from pymt_heatf:**
+- babel.toml: `library = "bmiheatf"`, `entry_point = "bmi_heat"`
+- bmi_heat.f90: `module bmiheatf` contains `type, extends(bmi) :: bmi_heat`
+- bmi_interoperability.f90: `use bmiheatf` then `type(bmi_heat) :: model_array(N_MODELS)`
 
-**Why:** The Fortran BMI wrapper is usable from Fortran directly (for testing, for Fortran-to-Fortran coupling). The C binding layer adds C ABI compatibility on top. Separating them means:
-- `bmi_wrf_hydro.f90` never needs `bind(C)` attributes in its function signatures
-- The C binding layer is a thin pass-through that can be generated or swapped
-- The babelizer's generated code follows this same separation
+**For WRF-Hydro:**
+- babel.toml: `library = "bmiwrfhydrof"`, `entry_point = "bmi_wrf_hydro"`
+- bmi_wrf_hydro.f90: `module bmiwrfhydrof` contains `type, extends(bmi) :: bmi_wrf_hydro`
+- Auto-generated bmi_interoperability.f90 will: `use bmiwrfhydrof` then `type(bmi_wrf_hydro) :: model_array(N_MODELS)`
 
-**Evidence:** bmi-example-fortran has `bmi_heat.f90` (Fortran BMI) separate from any C bindings. SCHISM_BMI has `bmischism.f90` (Fortran BMI) + `iso_c_bmi.f90` (generic C bindings) + `register_bmi` function (model-specific factory).
+**Confidence:** HIGH -- directly verified from pymt_heatf source code.
 
-### Pattern 2: Generic iso_c_bmi + Model-Specific Register
+### Pattern 2: Box/Handle Pattern (Multi-Instance)
 
-**What:** The iso_c_bmi.f90 module from NOAA-OWP is *generic* -- it works with any Fortran BMI model via the `box` pattern and polymorphism. The only model-specific piece is the `register_bmi` function that creates the concrete model instance.
+**What:** The babelizer-generated `bmi_interoperability.f90` uses a static array of model instances (N_MODELS = 2048) with availability tracking. Each `bmi_new()` call returns an integer handle (1-2048). All subsequent BMI calls pass this handle to identify which model instance to operate on.
 
-**When:** For the C binding layer.
+**Why it matters for WRF-Hydro:** WRF-Hydro cannot support multiple instances (module globals are singletons). However, the babelizer always generates the box pattern. This is fine -- it just means only model_array(1) will ever be used in practice, and calling bmi_new() a second time would succeed at the interop level but WRF-Hydro's internal `wrfhydro_engine_initialized` flag would prevent re-initialization.
 
-**Why:** This means we can reuse NOAA-OWP's existing `iso_c_bmi.f90` almost verbatim. We only need to write the `register_bmi` function that allocates our `bmi_wrf_hydro` type.
+**Our existing C binding uses a singleton pattern** (module-level `the_model` variable with `is_registered` guard). The babelizer's box pattern supersedes this. Our C binding layer is NOT used by the babelizer.
 
-**Example structure:**
-```fortran
-! bmi_interop.f90 -- Model-specific C binding layer
-
-module bmi_wrf_hydro_interop
-  use bmiwrfhydrof        ! Our BMI wrapper module
-  use iso_c_bmif_2_0      ! Generic C binding layer from NOAA-OWP
-  use, intrinsic :: iso_c_binding
-  implicit none
-contains
-  function register_bmi(this) result(bmi_status) bind(C, name="register_bmi")
-    type(c_ptr) :: this
-    integer(kind=c_int) :: bmi_status
-    type(bmi_wrf_hydro), pointer :: bmi_model
-    type(box), pointer :: bmi_box
-    allocate(bmi_wrf_hydro :: bmi_model)
-    allocate(bmi_box)
-    bmi_box%ptr => bmi_model
-    this = c_loc(bmi_box)
-    bmi_status = BMI_SUCCESS
-  end function
-end module
+```
+OUR C BINDING (test-only):          BABELIZER GENERATED (production):
++-------------------------+         +------------------------------------+
+| bmi_wrf_hydro_c_mod     |         | bmi_interoperability               |
+|  the_model (singleton)  |         |  model_array(2048) + model_avail() |
+|  is_registered flag     |         |  bmi_new() -> returns handle       |
+|  10 bind(C) functions   |         |  41+ bind(C) functions             |
+|  Used by: ctypes tests  |         |  Used by: Cython extension         |
++-------------------------+         +------------------------------------+
 ```
 
-### Pattern 3: bmif_2_0 vs bmif_2_0_iso (Two BMI Spec Variants)
+**Confidence:** HIGH -- verified from babelizer template source and pymt_heatf implementation.
 
-**What:** The CSDMS BMI Fortran spec has two variants:
-- `bmif_2_0` (standard) -- used by `bmi-fortran` conda package, used by `bmi_wrf_hydro.f90`
-- `bmif_2_0_iso` (C-compatible) -- used by NOAA-OWP iso_c_fortran_bmi, uses `c_int` for return types
+### Pattern 3: pkg-config Discovery Chain
 
-**When:** This matters when the C binding layer uses `iso_c_bmi.f90` which imports `bmif_2_0_iso`.
+**What:** The babelizer's Meson build system discovers all Fortran dependencies via pkg-config, not direct filesystem paths. The discovery chain is:
 
-**Strategy:** Our `bmi_wrf_hydro.f90` uses `bmif_2_0` from the conda package. The C binding layer needs `bmif_2_0_iso`. Two options:
-1. **Copy iso_c_bmi.f90 and modify to use `bmif_2_0`** -- simpler, avoids needing a second BMI spec module
-2. **Include `bmif_2_0_iso` as a local file and compile alongside** -- matches SCHISM_BMI exactly
-
-Option 1 is recommended because `bmi_wrf_hydro.f90` already extends `bmi` from `bmif_2_0`. Writing our own C binding wrappers that directly import from `bmiwrfhydrof` (our wrapper module) avoids the dual-spec issue entirely.
-
-### Pattern 4: String Conversion Helpers
-
-**What:** C strings are null-terminated arrays of `c_char`. Fortran strings are fixed-length with trailing spaces. Every C binding function that takes or returns a string needs conversion.
-
-**When:** Every function in the C binding layer that touches strings (most of them).
-
-**Example from SCHISM_BMI iso_c_bmi.f90 (verified in codebase):**
-```fortran
-pure function c_to_f_string(c_string) result(f_string)
-  character(kind=c_char, len=1), intent(in) :: c_string(:)
-  character(len=:), allocatable :: f_string
-  ! Scan for null terminator, then transfer
-end function
-
-pure function f_to_c_string(f_string) result(c_string)
-  character(len=*), intent(in) :: f_string
-  character(kind=c_char, len=1), dimension(len_trim(f_string)+1) :: c_string
-  ! Copy chars, append c_null_char
-end function
+```
+meson.build
+  dependency('bmiwrfhydrof', method: 'pkg-config')
+       |
+       v
+  $PKG_CONFIG_PATH / $CONDA_PREFIX/lib/pkgconfig/bmiwrfhydrof.pc
+       |
+       v
+  Libs: -L${libdir} -lbmiwrfhydrof
+  Requires: bmif
+       |
+       v
+  $CONDA_PREFIX/lib/pkgconfig/bmif.pc
+       |
+       v
+  Libs: -L${libdir} -lbmif
 ```
 
-### Pattern 5: Array Size Discovery in C Binding
+**Prerequisite:** `libbmiwrfhydrof.so` and `bmiwrfhydrof.pc` MUST be installed to `$CONDA_PREFIX/lib/` and `$CONDA_PREFIX/lib/pkgconfig/` respectively BEFORE running `babelize init` or building the generated package.
 
-**What:** C binding `get_value_*` functions receive `dest(*)` (assumed-size arrays). The C binding layer must determine the array size by querying `get_var_nbytes` and `get_var_itemsize` before passing to the Fortran BMI.
+**Our current state:** This is already done. The CMake install step (`cmake --install _build`) puts everything in the right place. Verified with `pkg-config --libs bmiwrfhydrof` returning `-L.../lib -lbmiwrfhydrof`.
 
-**When:** Every `get_value_*` and `set_value_*` C binding function.
+**Confidence:** HIGH -- verified from pymt_heatf meson.build and our installed bmiwrfhydrof.pc.
 
-**Evidence from SCHISM_BMI iso_c_bmi.f90 (line 396-408):**
-```fortran
-bmi_status = bmi_box%ptr%get_var_nbytes(f_str, num_bytes)
-bmi_status = bmi_box%ptr%get_var_itemsize(f_str, item_size)
-num_items = num_bytes / item_size
-bmi_status = bmi_box%ptr%get_value_int(f_str, dest(:num_items))
+### Pattern 4: Cython Type Dispatch for get_value/set_value
+
+**What:** The Cython extension queries the variable type via `bmi_get_var_type()` and dispatches to the appropriate typed function:
+
+```python
+# Simplified from wrfhydrof.pyx
+def get_value(self, var_name, buffer):
+    var_type = self.get_var_type(var_name)
+    if var_type == "double precision":
+        bmi_get_value_double(self._model_index, name_bytes, <double*>buffer.data)
+    elif var_type == "real":
+        bmi_get_value_float(self._model_index, name_bytes, <float*>buffer.data)
+    elif var_type == "integer":
+        bmi_get_value_int(self._model_index, name_bytes, <int*>buffer.data)
 ```
+
+**For WRF-Hydro:** Our `get_var_type()` returns `"double precision"` for all variables because the BMI wrapper converts WRF-Hydro's single-precision REAL to double. This means only `bmi_get_value_double()` will be called in practice.
+
+**Confidence:** HIGH -- verified from pymt_heatf Cython source.
+
+### Pattern 5: PyMT Plugin Entry Point Registration
+
+**What:** The generated `pyproject.toml` registers the babelized class as a PyMT plugin via entry points:
+
+```toml
+[project.entry-points."pymt.plugins"]
+WrfHydroF = "pymt_wrfhydro._bmi:WrfHydroF"
+```
+
+This allows PyMT to discover the model via:
+```python
+import pymt.models
+pymt.models.WrfHydroF  # auto-discovered via entry point
+```
+
+**Confidence:** HIGH -- verified from pymt_heatf pyproject.toml.
+
+### Pattern 6: Model Metadata Directory (meta/)
+
+**What:** PyMT requires a `meta/WrfHydroF/` directory with YAML metadata files:
+
+| File | Purpose | Content |
+|------|---------|---------|
+| `api.yaml` | Variable names, grids, exchange items | Input/output var names, grid types |
+| `info.yaml` | Model description, author, license | Human-readable model card |
+| `parameters.yaml` | Configurable parameters and defaults | Namelist parameters exposed to PyMT |
+| `run.yaml` | Runtime configuration template | Config file paths, working directory |
+| `heat.cfg` (or equivalent) | Example/default config file | Template configuration for testing |
+
+**For WRF-Hydro:** We need to create `meta/WrfHydroF/` with WRF-Hydro-specific metadata. The `api.yaml` should list our 8 output + 4 input CSDMS standard names and 3 grid types.
+
+**Confidence:** MEDIUM -- verified structure from pymt_heatf, but WRF-Hydro content must be created manually.
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Modifying bmi_wrf_hydro.f90 to Add bind(C)
-**What:** Adding `bind(C)` attributes directly to the BMI wrapper's type-bound procedures.
-**Why bad:** Breaks the Fortran BMI abstract interface contract (`bmif_2_0` doesn't use `bind(C)` in its deferred procedures). Would break the existing 151-test Fortran test suite. Makes the wrapper unusable from pure Fortran callers.
-**Instead:** Keep the Fortran wrapper clean. Add C bindings as a separate layer.
+### Anti-Pattern 1: Writing bmi_interoperability.f90 by Hand
 
-### Anti-Pattern 2: Module-Level Singleton Instead of Box Pattern
-**What:** Declaring `type(bmi_wrf_hydro), save :: global_model` at module level and having C functions operate on it.
-**Why bad:** Cannot support multiple instances (babelizer may create more than one). Not thread-safe. Breaks the CSDMS convention that callers manage model instances via handles.
-**Instead:** Use the box pattern where each call to `register_bmi` creates a new independent instance.
+**What:** Manually coding the C interop layer for all 41 BMI functions.
 
-### Anti-Pattern 3: Using f2py or CFFI Generator for the Binding Layer
-**What:** Auto-generating the C binding layer using f2py, SWIG, or similar tools.
-**Why bad:** BMI functions have specific conventions (assumed-size arrays, string handling) that auto-generators don't handle correctly. The CSDMS ecosystem expects hand-written iso_c_bmi wrappers. The babelizer's generated code expects specific function signatures (e.g., `register_bmi`).
-**Instead:** Follow the NOAA-OWP iso_c_bmi.f90 pattern -- it is essentially a boilerplate template.
+**Why bad:** The babelizer auto-generates this file (~818 lines) from templates, customized to match the entry_point and library specified in babel.toml. Hand-writing it duplicates effort, introduces bugs, and creates maintenance burden when the babelizer template evolves.
 
-### Anti-Pattern 4: Writing the Python Test with cffi Instead of ctypes
-**What:** Using CFFI's out-of-line mode which requires a build step and C header parsing.
-**Why bad:** Adds a compile dependency for the test. ctypes is stdlib, works directly with the .so, and is what the babelizer's generated code uses under the hood.
-**Instead:** Use ctypes, which is included in Python's standard library and needs no compilation.
+**Instead:** Let `babelize init` generate it. Our existing `bmi_wrf_hydro_c.f90` (10 functions, 335 lines) served its purpose for pre-babelizer testing and should NOT be extended.
 
-## Build Dependencies and Order
+### Anti-Pattern 2: Modifying Auto-Generated Files
 
-### Compilation DAG (Directed Acyclic Graph)
+**What:** Editing files that `babelize init` produces (bmi_interoperability.f90, wrfhydrof.pyx, meson.build, pyproject.toml).
+
+**Why bad:** `babelize update` regenerates these files from templates, overwriting manual changes. The babelizer uses a cookie-cutter approach -- regeneration is expected.
+
+**Instead:** For customization, modify `babel.toml` configuration or the `meta/` metadata files. If Cython code needs changes, contribute upstream to the babelizer templates.
+
+### Anti-Pattern 3: Building pymt_wrfhydro Before Installing libbmiwrfhydrof.so
+
+**What:** Running `pip install .` in the generated pymt_wrfhydro directory without first installing the shared library to `$CONDA_PREFIX`.
+
+**Why bad:** Meson calls `pkg-config --libs bmiwrfhydrof` which fails if the .pc file is not in the search path. The build silently fails or produces a broken extension.
+
+**Instead:** Always follow this order:
+1. Build libbmiwrfhydrof.so (CMake or build.sh --shared)
+2. Install to $CONDA_PREFIX (`cmake --install _build`)
+3. Verify: `pkg-config --libs bmiwrfhydrof`
+4. THEN build pymt_wrfhydro
+
+### Anti-Pattern 4: Using --build-isolation for pip install
+
+**What:** Running `pip install .` (default uses build isolation) in a complex conda environment.
+
+**Why bad:** Build isolation creates a fresh virtual environment that does not inherit `$CONDA_PREFIX`, `$PKG_CONFIG_PATH`, or compiled Fortran libraries. Meson cannot find bmiwrfhydrof.pc in an isolated environment.
+
+**Instead:** Use `pip install . --no-build-isolation` or `python -m build --no-isolation` to build within the existing conda environment where all dependencies are visible.
+
+### Anti-Pattern 5: Expecting Multiple WRF-Hydro Instances
+
+**What:** Trying to create two WrfHydroF() instances in Python and run them independently.
+
+**Why bad:** WRF-Hydro uses module-level globals (rt_domain, SMOIS, COSZEN, etc.) that are allocated once and cannot be re-allocated. The `wrfhydro_engine_initialized` flag prevents double-init. Even though the babelizer generates a 2048-slot model array, only one slot can actually be used.
+
+**Instead:** Document this as a known limitation. Use a single instance per process. For ensemble runs, use separate processes.
+
+## Relationship Between Our C Binding and Babelizer's Interop Layer
+
+This is a critical architectural clarification:
 
 ```
-     WRF-Hydro 22 .a libs       bmi-fortran (bmif_2_0.mod + libbmif.so)
-              \                   /
-               \                 /
-                v               v
-         bmi_wrf_hydro.f90  (uses bmif_2_0, uses WRF-Hydro modules)
-                     |
-                     v
-              bmi_interop.f90  (uses bmiwrfhydrof, uses iso_c_binding)
-                     |
-                     v
-            libwrfhydro_bmi.so  (links bmi_wrf_hydro.o + bmi_interop.o
-                |                + 22 WRF-Hydro .a + libbmif + MPI + NetCDF)
-               / \
-              /   \
-             v     v
-  bmi_wrf_hydro_test    test_bmi_wrfhydro.py
-  (Fortran, links .so)  (Python, loads .so via ctypes)
+WHAT WE BUILT (Phase 1.5):           WHAT BABELIZER GENERATES (Phase 2):
++----------------------------------+  +--------------------------------------+
+| bmi_wrf_hydro_c.f90 (335 lines)  |  | bmi_interoperability.f90 (818 lines) |
+| Module: bmi_wrf_hydro_c_mod      |  | Module: bmi_interoperability         |
+| Pattern: Singleton                |  | Pattern: Box/handle (2048 slots)     |
+| Functions: 10 (subset)            |  | Functions: 41+ (complete BMI)        |
+| Uses: bmiwrfhydrof, bmif_2_0     |  | Uses: bmiwrfhydrof, bmif_2_0         |
+| Compiled into: libbmiwrfhydrof.so|  | Compiled into: wrfhydrof.so (Cython) |
+| Called by: Python ctypes          |  | Called by: Cython wrfhydrof.pyx      |
+| Status: TEST INFRASTRUCTURE      |  | Status: PRODUCTION                   |
++----------------------------------+  +--------------------------------------+
 ```
 
-### Build Order (Sequential Dependencies)
+Key differences:
+1. **Instance management:** Our C binding uses a singleton (`the_model`); babelizer uses array slots (`model_array(N_MODELS)`)
+2. **Scope:** Our C binding exposes 10 functions; babelizer exposes all 41+ BMI functions
+3. **Compilation target:** Our C binding is compiled INTO libbmiwrfhydrof.so; babelizer's interop is compiled into the Cython extension module
+4. **Consumer:** Our C binding is called by ctypes; babelizer's interop is called by Cython
 
-1. **bmi_wrf_hydro.f90** must compile first (produces `bmiwrfhydrof.mod` and `wrfhydro_bmi_state_mod.mod`)
-2. **bmi_interop.f90** must compile second (depends on `bmiwrfhydrof.mod`)
-3. **libwrfhydro_bmi.so** links both `.o` files + all dependencies
-4. **Tests** (Fortran or Python) run against the built `.so`
+**They do NOT conflict.** The babelizer-generated interop calls `model_array(i)%initialize()` etc., which invokes the type-bound procedures in module `bmiwrfhydrof` (our BMI wrapper). Our C binding module (`bmi_wrf_hydro_c_mod`) remains inside libbmiwrfhydrof.so but is simply unused by the babelizer pathway.
 
-### CMakeLists.txt Changes Required
+## Complete Build Order (Dependencies Mapped)
 
-The existing CMakeLists.txt (650 lines) needs minimal changes:
+```
+STEP 1: Prerequisites (already done)
+========================================
+  WRF-Hydro compiled with -fPIC
+  bmi-fortran 2.0.3 installed
+  libbmiwrfhydrof.so built + installed
+  bmiwrfhydrof.pc in $CONDA_PREFIX/lib/pkgconfig/
+  bmiwrfhydrof.mod in $CONDA_PREFIX/include/
 
-```cmake
-# SECTION 7: Add bmi_interop.f90 to the shared library sources
-add_library(wrfhydro_bmi SHARED
-  src/bmi_wrf_hydro.f90
-  src/bmi_interop.f90          # NEW: C binding layer
-)
+STEP 2: Install Babelizer
+========================================
+  conda install -c conda-forge babelizer
+  (brings: babelizer, cython, meson-python, numpy, bmipy)
+
+STEP 3: Write babel.toml
+========================================
+  [library.WrfHydroF]
+  language = "fortran"
+  library = "bmiwrfhydrof"
+  entry_point = "bmi_wrf_hydro"
+
+  [build]
+  undef_macros = []
+  define_macros = []
+  libraries = []
+  library_dirs = []
+  include_dirs = []
+  extra_compile_args = []
+
+  [package]
+  name = "pymt_wrfhydro"
+  requirements = [""]
+
+  [info]
+  github_username = "pymt-lab"
+  package_author = "..."
+  package_author_email = "..."
+  package_license = "MIT"
+  summary = "PyMT plugin for WRF-Hydro hydrological model"
+
+  [ci]
+  python_version = ["3.11"]
+  os = ["linux"]
+
+STEP 4: Generate Package
+========================================
+  babelize init babel.toml
+  -> Creates pymt_wrfhydro/ directory with all auto-generated files
+
+STEP 5: Create Model Metadata
+========================================
+  Write meta/WrfHydroF/api.yaml (variable names, grids)
+  Write meta/WrfHydroF/info.yaml (model description)
+  Write meta/WrfHydroF/parameters.yaml (config parameters)
+  Write meta/WrfHydroF/run.yaml (runtime config)
+  Write examples/bmi_config.nml (test config file)
+
+STEP 6: Build & Install pymt_wrfhydro
+========================================
+  cd pymt_wrfhydro
+  pip install . -v --no-build-isolation
+  (Meson discovers bmiwrfhydrof via pkg-config,
+   compiles bmi_interoperability.f90 + wrfhydrof.pyx,
+   links into Python extension module)
+
+STEP 7: Verify Import
+========================================
+  python -c "from pymt_wrfhydro import WrfHydroF; print('OK')"
+
+STEP 8: Run bmi-tester
+========================================
+  bmi-test pymt_wrfhydro._bmi:WrfHydroF \
+    --config-file=examples/bmi_config.nml \
+    --root-dir=examples \
+    --bmi-version="2.0" -vvv
+
+STEP 9: Validate Against Reference
+========================================
+  Python script comparing pymt_wrfhydro output
+  to standalone WRF-Hydro Croton NY reference data
 ```
 
-That is the primary change. The compile flags, include directories, and link libraries already handle everything needed.
+## Generated Package Structure (pymt_wrfhydro)
 
-### build.sh Changes Required
+After `babelize init babel.toml`, the generated directory contains:
 
-```bash
-# Compile bmi_interop.f90 (after bmi_wrf_hydro.f90)
-${FC} ${FFLAGS} ${INCLUDES} ${MOD_OUT} "${SRC_DIR}/bmi_interop.f90" -o "${BUILD_DIR}/bmi_interop.o"
-
-# Add bmi_interop.o to the link step
-# For shared library: add -shared -fPIC to link command
 ```
+pymt_wrfhydro/
++-- .github/
+|   +-- workflows/          # CI configuration (GitHub Actions)
++-- docs/                   # Documentation stubs
++-- examples/               # Example config files (WE ADD)
++-- external/               # Git submodules for deps (if needed)
++-- meta/
+|   +-- WrfHydroF/          # Model metadata (WE WRITE)
+|       +-- api.yaml        #   Variable names, grids, exchange items
+|       +-- info.yaml       #   Model description, author, license
+|       +-- parameters.yaml #   Configurable parameters
+|       +-- run.yaml        #   Runtime configuration
++-- pymt_wrfhydro/
+|   +-- __init__.py         # from pymt_wrfhydro._bmi import WrfHydroF
+|   +-- _bmi.py             # from pymt_wrfhydro.lib import WrfHydroF
+|   +-- _version.py         # Version info
+|   +-- data/ -> meta/WrfHydroF  # Symlink to metadata
+|   +-- lib/
+|       +-- __init__.py     # Package init
+|       +-- bmi_interoperability.f90  # AUTO-GENERATED: 41+ bind(C) functions
+|       +-- bmi_interoperability.h    # AUTO-GENERATED: C header for .f90
+|       +-- wrfhydrof.pyx   # AUTO-GENERATED: Cython wrapper class
++-- .gitignore
++-- .pre-commit-config.yaml
++-- babel.toml              # Preserved configuration
++-- CHANGES.rst             # Changelog
++-- CREDITS.rst             # Credits
++-- LICENSE.rst              # License
++-- Makefile                # Convenience targets (test, install, clean)
++-- meson.build             # AUTO-GENERATED: Meson build system
++-- noxfile.py              # Test runner configuration
++-- pyproject.toml          # AUTO-GENERATED: Python packaging
++-- requirements*.txt       # Dependency files
++-- setup.cfg               # Additional setuptools config
+```
+
+Files we write or modify: babel.toml, meta/WrfHydroF/*.yaml, examples/
+Files the babelizer generates: everything else (DO NOT EDIT)
 
 ## Scalability Considerations
 
-| Concern | Current (Croton NY) | At Production Scale (NWM) | Mitigation |
-|---------|---------------------|---------------------------|------------|
-| Shared library size | ~50-100 MB (includes 22 static libs) | Same binary, larger data | Static libs are absorbed into .so at link time |
-| Memory per model instance | ~200 MB (Croton 15x16 grid) | 5-20 GB (NWM 4608x3840 grid) | WRF-Hydro globals limit to 1 instance anyway |
-| Python ctypes overhead | Negligible (1 FFI call per BMI call) | Negligible (data copy dominates) | get_value_ptr could eliminate copies if implemented |
-| Multiple instances | Prevented by WRF-Hydro module globals | Same constraint | Document as limitation; Phase 2+ may address |
-
-## Suggested Implementation Order
-
-Based on the dependency graph and risk profile:
-
-1. **Write bmi_interop.f90** (C binding layer) -- the core new code
-   - Start with `register_bmi` + `initialize` + `update` + `finalize`
-   - Add string conversion helpers (c_to_f_string, f_to_c_string)
-   - Add all remaining BMI function wrappers
-   - Follow SCHISM_BMI's iso_c_bmi.f90 as template
-
-2. **Update CMakeLists.txt** -- add bmi_interop.f90 to sources
-
-3. **Build libwrfhydro_bmi.so via CMake** -- verify the .so builds and links
-
-4. **Update build.sh** -- add bmi_interop.f90 compile + shared lib link target
-
-5. **Write test_bmi_wrfhydro.py** -- Python ctypes test
-   - Load .so, call register_bmi, initialize, update, get_value_double, finalize
-   - Verify output values match Fortran test expectations
-
-6. **Run full validation** -- both Fortran (151 tests) and Python test pass
+| Concern | Current State | At Scale (NWM Domain) | Mitigation |
+|---------|---------------|----------------------|------------|
+| Library load time | ~2s (Croton NY, 200 reaches) | ~10-30s (NWM, 2.7M reaches) | One-time cost at initialize() |
+| Memory for model_array(2048) | Negligible (only 1 used) | Negligible (only 1 used) | N/A -- WRF-Hydro is singleton |
+| get_value array copy | Fast (200 doubles) | Slower (2.7M doubles = ~21 MB per call) | Use get_value_ptr if possible; batch calls |
+| Cython overhead per BMI call | ~1 microsecond | ~1 microsecond (constant) | Negligible vs. model computation |
+| Config file path length | OK (WSL2 relative paths) | OK if < 80 chars | Use relative paths from run directory |
 
 ## Sources
 
-- **SCHISM_BMI iso_c_bmi.f90** (NOAA-OWP, Nels Frazier, Aug 2021): `/mnt/c/Users/mohansai/Desktop/Projects/VS_Code/WRF-Hydro-BMI/SCHISM_BMI/src/BMI/iso_c_fortran_bmi/src/iso_c_bmi.f90` -- 948 lines, all 41 BMI functions wrapped with C bindings
-- **SCHISM_BMI bmischism.f90 register_bmi**: `/mnt/c/Users/mohansai/Desktop/Projects/VS_Code/WRF-Hydro-BMI/SCHISM_BMI/src/BMI/bmischism.f90` lines 1701-1727 -- the box pattern factory function
-- **SCHISM_BMI test_iso_c.c**: `/mnt/c/Users/mohansai/Desktop/Projects/VS_Code/WRF-Hydro-BMI/SCHISM_BMI/src/BMI/iso_c_fortran_bmi/test/test_iso_c.c` -- 402-line C test demonstrating the complete calling convention
-- **bmi-example-fortran bmi_heat.f90**: `/mnt/c/Users/mohansai/Desktop/Projects/VS_Code/WRF-Hydro-BMI/bmi-example-fortran/bmi_heat/bmi_heat.f90` -- CSDMS reference implementation (935 lines)
-- **bmif_2_0_iso spec**: `/mnt/c/Users/mohansai/Desktop/Projects/VS_Code/WRF-Hydro-BMI/SCHISM_BMI/src/BMI/iso_c_fortran_bmi/src/bmi.f90` -- C-compatible BMI abstract interface
-- **Existing bmi_wrf_hydro.f90**: `/mnt/c/Users/mohansai/Desktop/Projects/VS_Code/WRF-Hydro-BMI/bmi_wrf_hydro/src/bmi_wrf_hydro.f90` -- 1,919 lines, all 41 BMI functions
-- **Existing CMakeLists.txt**: `/mnt/c/Users/mohansai/Desktop/Projects/VS_Code/WRF-Hydro-BMI/bmi_wrf_hydro/CMakeLists.txt` -- 650 lines, fully configured
+- [pymt_heatf babel.toml](https://github.com/pymt-lab/pymt_heatf/blob/main/babel.toml) -- Reference Fortran babelizer configuration (HIGH confidence)
+- [pymt_heatf meson.build](https://github.com/pymt-lab/pymt_heatf/blob/main/meson.build) -- Reference Meson build showing pkg-config dependency chain (HIGH confidence)
+- [pymt_heatf bmi_interoperability.f90](https://github.com/pymt-lab/pymt_heatf/blob/main/pymt_heatf/lib/bmi_interoperability.f90) -- Auto-generated interop layer, verified box pattern and use statements (HIGH confidence)
+- [pymt_heatf heatmodelf.pyx](https://github.com/pymt-lab/pymt_heatf/blob/main/pymt_heatf/lib/heatmodelf.pyx) -- Cython wrapper showing type dispatch pattern (HIGH confidence)
+- [pymt_heatf pyproject.toml](https://github.com/pymt-lab/pymt_heatf/blob/main/pyproject.toml) -- PyMT entry point registration (HIGH confidence)
+- [babelizer GitHub](https://github.com/csdms/babelizer) -- Template source, meson.build template, supported languages (HIGH confidence)
+- [babelizer templates](https://github.com/csdms/babelizer/tree/develop/babelizer/data/templates) -- Jinja2 templates for generated files (HIGH confidence)
+- [bmi-tester GitHub](https://github.com/csdms/bmi-tester) -- BMI testing tool, CLI usage `bmi-test module:Class` (HIGH confidence)
+- [babelizer readthedocs](https://babelizer.readthedocs.io/en/latest/readme.html) -- babel.toml configuration format (MEDIUM confidence)
+- [CSDMS bmi.readthedocs](https://bmi.csdms.io/en/latest/csdms.html) -- BMI-based tools overview (MEDIUM confidence)
+- Our existing files: bmi_wrf_hydro_c.f90, CMakeLists.txt, build.sh, bmiwrfhydrof.pc.cmake -- Direct source analysis (HIGH confidence)

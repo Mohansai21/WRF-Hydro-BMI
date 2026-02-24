@@ -1,519 +1,669 @@
-# Pitfalls Research: Fortran Shared Library + C Bindings + Python Interop
+# Domain Pitfalls: Babelizing a Fortran+MPI BMI Shared Library
 
-**Domain:** Fortran BMI shared library with ISO_C_BINDING, linking against MPI-dependent static libraries, Python interop via ctypes
-**Researched:** 2026-02-23
-**Confidence:** HIGH (verified against SCHISM_BMI reference implementation, bmi-example-fortran, iso_c_fortran_bmi library, and current project source code)
+**Domain:** Babelizer integration for Fortran BMI shared library (MPI-linked, singleton model)
+**Researched:** 2026-02-24
+**Confidence:** HIGH for babelizer mechanics (source code verified), MEDIUM for runtime issues (community patterns + official docs)
+
+---
 
 ## Critical Pitfalls
 
-Mistakes that cause build failures, segfaults, or rewrites.
-
-### Pitfall 1: WRF-Hydro Static Libraries Compiled Without -fPIC
-
-**What goes wrong:**
-Building `libwrfhydro_bmi.so` fails at link time with errors like:
-```
-relocation R_X86_64_32 against `.rodata` can not be used when making a shared object; recompile with -fPIC
-```
-The 22 WRF-Hydro static libraries (`libhydro_driver.a`, `libnoahmp_phys.a`, etc.) were compiled by WRF-Hydro's CMake build without the `-fPIC` flag. On x86_64 Linux, static `.a` files built without `-fPIC` contain absolute address relocations that cannot be embedded in a position-independent shared library (`.so`).
-
-**Why it happens:**
-WRF-Hydro's own `CMakeLists.txt` has no `-fPIC` or `CMAKE_POSITION_INDEPENDENT_CODE` setting because its build target is a standalone executable (`wrf_hydro`), not a shared library. Executables do not require position-independent code. This is confirmed: grep found zero occurrences of `fPIC` or `POSITION_INDEPENDENT` in `wrf_hydro_nwm_public/`.
-
-**How to avoid:**
-Rebuild WRF-Hydro from source with `-fPIC` added globally. Two approaches:
-1. **CMake flag** (cleanest): `cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON`
-2. **Environment variable**: `FFLAGS="-fPIC" CFLAGS="-fPIC" cmake .. -DCMAKE_BUILD_TYPE=Release`
-
-Both cause all object files to be compiled with `-fPIC`, making the resulting `.a` files safe to link into `.so`. This does NOT change WRF-Hydro source code -- it only changes compile flags.
-
-**Warning signs:**
-- Linker errors mentioning "relocation", "recompile with -fPIC", or "can not be used when making a shared object"
-- These appear ONLY when building the shared library, not the test executables (executables work fine without -fPIC)
-- The current `build.sh` links executables (not `.so`), so this issue is invisible until CMake `.so` build is attempted
-
-**Phase to address:**
-Shared Library Build (first milestone task). Must be done before ANY other work since everything depends on the `.so` linking successfully.
+Mistakes that cause build failures, segfaults, or force rewrites.
 
 ---
 
-### Pitfall 2: Fortran String Passing Across the C Boundary
+### Pitfall 1: Meson Cannot Find Our Library via pkg-config
 
 **What goes wrong:**
-Python calls `initialize(handle, config_file)` via ctypes, but the Fortran side receives garbage characters, truncated strings, or segfaults. The BMI `initialize` function takes `character(len=*)` -- which is NOT C-interoperable. Fortran strings have no null terminator and carry a hidden length argument; C strings are null-terminated with no length.
+Running `pip install .` inside the babelized `pymt_wrfhydro/` directory fails with:
+```
+meson.build:XX: ERROR: Dependency "bmiwrfhydrof" not found, tried pkgconfig
+```
+The babelizer-generated `meson.build` contains `dependency('bmiwrfhydrof', method: 'pkg-config')`. Meson calls `pkg-config --cflags --libs bmiwrfhydrof` at build time and it fails because either the `.pc` file does not exist, is not on `PKG_CONFIG_PATH`, or contains incorrect paths.
 
 **Why it happens:**
-Fortran `character(len=*)` arguments are NOT interoperable with C. The ISO C standard requires `character(kind=c_char, len=1), dimension(*)` for C-interoperable strings. The existing `bmi_wrf_hydro.f90` uses standard Fortran string arguments (correct for Fortran-to-Fortran calls in the current test suite), but the ISO_C_BINDING wrapper layer must explicitly convert between C null-terminated strings and Fortran character arrays.
+Three distinct failure modes converge here:
 
-The SCHISM BMI iso_c_bmi.f90 has exactly this pattern: every function that accepts a string does:
-```fortran
-character(kind=c_char, len=1), dimension(BMI_MAX_FILE_NAME), intent(in) :: config_file
-f_file = c_to_f_string(config_file)  ! Convert C string -> Fortran string
-```
+1. **Missing .pc file.** We created `bmiwrfhydrof.pc` and installed it to `$CONDA_PREFIX/lib/pkgconfig/`, but `pip install` launches a subprocess that may not inherit the conda environment. The `PKG_CONFIG_PATH` is not set in the build isolation environment.
 
-Every function that returns a string does:
-```fortran
-type(1:len_trim(f_type)+1) = f_to_c_string(f_type)  ! Append null terminator
-```
+2. **pip build isolation.** By default, `pip install .` creates an isolated build environment. This new environment does not have `$CONDA_PREFIX/lib/pkgconfig` on its `PKG_CONFIG_PATH`. Even if the parent shell has the correct paths, the isolated pip subprocess does not.
 
-**How to avoid:**
-1. Write `c_to_f_string()` and `f_to_c_string()` helper functions (copy from SCHISM's `iso_c_bmi.f90`)
-2. In ALL C-binding wrappers that take string arguments (initialize, get_var_type, get_var_units, get_var_grid, get_value, set_value, etc.), convert C strings to Fortran strings before calling the Fortran BMI procedures, and convert Fortran strings back to C strings before returning
-3. The C-binding wrapper functions must use `character(kind=c_char, len=1), dimension(*)` -- NOT `character(len=*)`
-4. Add a safety bound in `c_to_f_string` to prevent scanning past `BMI_MAX_FILE_NAME` characters:
-```fortran
-do i = 1, min(size(c_string), BMI_MAX_FILE_NAME)
-  if (c_string(i) == c_null_char) exit
-end do
-```
+3. **Meson discards PKG_CONFIG_PATH.** There is a known Meson issue (#14461) where pre-defined `PKG_CONFIG_LIBDIR` and related environment variables can be discarded during dependency resolution, especially in cross-compilation or native build scenarios.
 
-**Warning signs:**
-- Variable names not matching in get_value/set_value calls (string comparison fails silently)
-- get_component_name returns trailing garbage characters
-- Fortran `name == 'channel_water__volume_flow_rate'` comparisons fail even with correct input
-- Python ctypes `c_char_p` appears to work in simple tests but fails with longer names
+**Consequences:**
+Build fails immediately. No pymt_wrfhydro package is produced. This is the most likely first failure mode when attempting babelization.
 
-**Phase to address:**
-ISO_C_BINDING wrapper implementation. This is the core of the C-binding layer and must be tested for EVERY function that takes or returns a string (roughly 25 of the 41 BMI functions).
+**Prevention:**
+1. **Use `--no-build-isolation` flag:**
+   ```bash
+   pip install --no-build-isolation .
+   ```
+   This uses the current conda environment directly (with all paths intact) instead of creating an isolated build env.
+
+2. **Set PKG_CONFIG_PATH explicitly before pip install:**
+   ```bash
+   export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
+   pip install --no-build-isolation .
+   ```
+
+3. **Verify pkg-config works BEFORE attempting pip install:**
+   ```bash
+   pkg-config --cflags --libs bmiwrfhydrof
+   # Expected: -I/path/include -L/path/lib -lbmiwrfhydrof
+   ```
+
+4. **Ensure the .pc file has correct absolute paths** (not relative, not stale from a different conda env activation).
+
+**Detection:**
+- `pip install .` fails with "Dependency not found" mentioning pkg-config
+- The error appears during the Meson configure phase, before any compilation starts
+- Running `pkg-config --cflags --libs bmiwrfhydrof` manually from the same shell works fine (because the parent shell has the correct env, but pip's subprocess does not)
+
+**Phase to address:** Phase 2a (babel.toml + babelize init). Verify pkg-config discovery BEFORE running pip install. This is the gatekeeper for everything else.
 
 ---
 
-### Pitfall 3: MPI dlopen RTLD_GLOBAL Requirement
+### Pitfall 2: Babelizer's Multi-Instance model_array vs WRF-Hydro's Singleton
 
 **What goes wrong:**
-Python loads `libwrfhydro_bmi.so` via `ctypes.CDLL("libwrfhydro_bmi.so")`, calls `initialize()`, and gets a segmentation fault inside MPI internals. The crash occurs during `MPI_Init` or the first MPI call. The same `.so` works perfectly when loaded from a Fortran test executable.
+The babelizer auto-generates `bmi_interoperability.f90` with a `model_array(N_MODELS)` pattern supporting up to 2,048 simultaneous model instances:
+```fortran
+integer, parameter :: N_MODELS = 2048
+type (bmi_wrf_hydro) :: model_array(N_MODELS)
+logical :: model_avail(N_MODELS) = .true.
+```
+Each Python `WrfHydroBmi()` call invokes `bmi_new()` which allocates a new slot. But WRF-Hydro uses Fortran module-level globals (`COSZEN`, `SMOIS`, `rt_domain`, etc.) that are singletons. Creating a second instance either:
+- Crashes (double allocation of module arrays)
+- Silently corrupts state (two "instances" sharing the same global state)
+- Succeeds on `bmi_new()` but crashes on the second `initialize()` due to `wrfhydro_engine_initialized` guard
 
 **Why it happens:**
-Open MPI uses `dlopen()` internally to load its plugin components. These components depend on symbols from `libmpi.so`. When Python's `ctypes.CDLL()` loads the shared library, it defaults to `RTLD_LOCAL`, which means MPI's symbols are not visible to its own dynamically loaded plugins. This is a well-documented issue (Open MPI GitHub issue #3705, official Open MPI docs Section 11.4).
+The babelizer's architecture ASSUMES models can support multiple instances. This is true for simple models (like the Heat example) that store all state inside the derived type. WRF-Hydro stores state in module globals (`module_RT_data`, `module_noahmp_hrldas_driver`, etc.) which are shared across all `type(bmi_wrf_hydro)` instances in the same process.
 
-The current project uses Open MPI 5.0.8 via conda, which is affected by this.
+Our `wrfhydro_engine_initialized` flag correctly prevents double-initialization of WRF-Hydro internals. The second instance's `initialize()` will detect this and skip the engine init. But the second instance will then point to the same global state as the first, producing incorrect coupling behavior.
 
-**How to avoid:**
-In the Python test script, load MPI libraries with `RTLD_GLOBAL` BEFORE loading `libwrfhydro_bmi.so`:
-```python
-import ctypes
+**Consequences:**
+- If a user (or PyMT) creates two `WrfHydroBmi()` instances, the second one is silently broken
+- bmi-tester might create multiple instances during test lifecycle
+- PyMT's internal mechanics might attempt multi-instance patterns
 
-# CRITICAL: Load MPI with RTLD_GLOBAL before loading the BMI library
-ctypes.CDLL("libmpi.so", mode=ctypes.RTLD_GLOBAL)
+**Prevention:**
+1. **Document the singleton constraint prominently** in the generated package's README and docstrings
+2. **The bmi_new() slot allocation will still work** -- the issue is at `initialize()` time, not allocation time. Our `wrfhydro_engine_initialized` guard prevents crashes but does NOT prevent confusion.
+3. **Test with exactly ONE instance** and document that WRF-Hydro does not support multi-instance.
+4. **Consider adding a module-level counter** in `bmi_wrf_hydro.f90` that explicitly returns `BMI_FAILURE` from `initialize()` if more than one instance has been initialized:
+   ```fortran
+   integer, save :: active_instance_count = 0
+   ! In initialize():
+   if (active_instance_count > 0) then
+     bmi_status = BMI_FAILURE
+     return
+   end if
+   active_instance_count = active_instance_count + 1
+   ```
+5. **Reset the counter in finalize()** so sequential init/finalize/init patterns work.
 
-# Now load the BMI library
-bmi = ctypes.CDLL("libwrfhydro_bmi.so")
-```
+**Detection:**
+- Second `WrfHydroBmi()` instance returns unexpected values
+- Segfault on second `initialize()` call
+- bmi-tester creates multiple model instances and they interfere
 
-Alternatively, use `mpi4py` which handles this automatically:
-```python
-from mpi4py import MPI  # Loads MPI with correct flags
-import ctypes
-bmi = ctypes.CDLL("libwrfhydro_bmi.so")
-```
+**Phase to address:** Phase 2a (pre-babelization wrapper hardening). Add explicit guard BEFORE babelizing.
 
-Also: `libmpifort.so` may need to be loaded before `libmpi.so` for Fortran MPI symbols to resolve correctly.
+---
 
-**Warning signs:**
-- Segfault deep in MPI library code (backtrace shows `dlopen`, `mca_base_component_find`, or similar)
-- The same shared library works when linked into a Fortran executable but crashes from Python
+### Pitfall 3: MPI Symbol Resolution Crash (RTLD_GLOBAL)
+
+**What goes wrong:**
+Importing `pymt_wrfhydro` or calling `initialize()` produces a segfault inside MPI internals. The crash occurs because the babelized Cython extension loads `libbmiwrfhydrof.so` (which depends on `libmpi.so`) with `RTLD_LOCAL` (the default). Open MPI's internal plugin system uses `dlopen()` to load its components, and those components depend on symbols from `libmpi.so`. With `RTLD_LOCAL`, those symbols are invisible.
+
+**Why it happens:**
+Open MPI 5.0.8 (our conda version) uses `dlopen()` internally to load MCA (Modular Component Architecture) plugins. These plugins do NOT explicitly link to `libmpi.so` -- they expect its symbols to be in the global namespace. Python's `ctypes.CDLL()` and Cython extension loading both use `RTLD_LOCAL` by default, which hides `libmpi` symbols from the plugins.
+
+This is documented in Open MPI official docs (Section 11.4: "Dynamically loading libmpi at runtime") and GitHub issue #3705.
+
+The babelizer-generated Cython extension does NOT handle this automatically. The Heat model example does not use MPI, so this issue is invisible in the reference implementation.
+
+**Consequences:**
+- Segfault on import or first BMI call
+- Error manifests ONLY when loading from Python -- works fine from Fortran test executables
+- May work with MPICH (which does not use dlopen for plugins) but fails with Open MPI
+
+**Prevention:**
+1. **Import mpi4py before importing pymt_wrfhydro:**
+   ```python
+   from mpi4py import MPI  # Loads MPI with correct RTLD_GLOBAL flags
+   from pymt_wrfhydro import WrfHydroBmi
+   ```
+   mpi4py handles the RTLD_GLOBAL loading correctly.
+
+2. **Or manually load MPI with RTLD_GLOBAL:**
+   ```python
+   import ctypes
+   ctypes.CDLL("libmpi.so", mode=ctypes.RTLD_GLOBAL)
+   from pymt_wrfhydro import WrfHydroBmi
+   ```
+
+3. **Or set environment variable before Python starts:**
+   ```bash
+   export LD_PRELOAD=libmpi.so
+   python -c "from pymt_wrfhydro import WrfHydroBmi"
+   ```
+
+4. **Add an `__init__.py` guard** in the generated pymt_wrfhydro package that handles this automatically:
+   ```python
+   # pymt_wrfhydro/__init__.py (add at top, before extension import)
+   import ctypes, os
+   _mpi_path = os.path.join(os.environ.get('CONDA_PREFIX', ''), 'lib', 'libmpi.so')
+   if os.path.exists(_mpi_path):
+       ctypes.CDLL(_mpi_path, mode=ctypes.RTLD_GLOBAL)
+   ```
+
+**Detection:**
+- Segfault with backtrace showing `dlopen`, `mca_base_component_find`, or `opal_init`
 - "symbol lookup error" mentioning MPI-related symbols
-- Works on MPICH but crashes on Open MPI (MPICH does not use dlopen for internal plugins)
+- Works with `mpirun -np 1 python script.py` but NOT with `python script.py` directly
 
-**Phase to address:**
-Python test script. This must be addressed in the very first Python test attempt. Document the workaround prominently in both the test script and the documentation.
-
----
-
-### Pitfall 4: Opaque Handle / Box Pattern Not Implemented
-
-**What goes wrong:**
-The C-binding wrapper creates a `bmi_wrf_hydro` object but has no way to pass it as an opaque `void*` handle to C/Python callers. Without the "box" pattern, there is no way for C code to hold a reference to the polymorphic Fortran type. Attempts to use `c_loc` directly on a polymorphic type (`class(bmi)`) fail because polymorphic types are not C-interoperable.
-
-**Why it happens:**
-Fortran polymorphic types (`class(bmi)`) contain a hidden descriptor (vtable pointer) that is not representable in C. The `c_loc()` intrinsic requires `TARGET` attribute and works on non-polymorphic types, but the whole point of BMI is polymorphism (`type, extends(bmi) :: bmi_wrf_hydro`). You cannot directly expose a Fortran polymorphic object to C.
-
-The SCHISM/NextGen ecosystem solves this with the "box" pattern (see `iso_c_bmi.f90` lines 17-19):
-```fortran
-type box
-  class(bmi), pointer :: ptr => null()
-end type
-```
-The C caller gets a `c_ptr` to the `box`, and each C-binding function unpacks it:
-```fortran
-call c_f_pointer(this, bmi_box)
-bmi_status = bmi_box%ptr%initialize(f_file)
-```
-The model is allocated and boxed in `register_bmi`:
-```fortran
-function register_bmi(this) result(bmi_status) bind(C, name="register_bmi")
-  allocate(bmi_wrf_hydro :: bmi_model)
-  allocate(bmi_box)
-  bmi_box%ptr => bmi_model
-  this = c_loc(bmi_box)
-end function
-```
-
-**How to avoid:**
-1. Implement a `register_bmi()` function with `bind(C, name="register_bmi")` that allocates a `bmi_wrf_hydro` object, wraps it in a `box`, and returns `c_loc(bmi_box)` as a `c_ptr`
-2. Every C-binding wrapper function receives this `c_ptr`, calls `c_f_pointer(this, bmi_box)`, then calls the Fortran BMI method through `bmi_box%ptr%<method>()`
-3. The `finalize()` C-binding wrapper must deallocate both the model and the box to prevent memory leaks:
-```fortran
-bmi_status = bmi_box%ptr%finalize()
-if(associated(bmi_box%ptr)) deallocate(bmi_box%ptr)
-if(associated(bmi_box)) deallocate(bmi_box)
-```
-4. Add a module-level singleton guard since WRF-Hydro uses global state:
-```fortran
-logical, save :: instance_registered = .false.
-```
-
-The SCHISM BMI `iso_c_bmi.f90` (948 lines) is the exact template to follow. It is already in the project at `SCHISM_BMI/src/BMI/iso_c_fortran_bmi/src/iso_c_bmi.f90`.
-
-**Warning signs:**
-- Compiler errors about "polymorphic variable may not have the TARGET attribute" or "not C interoperable"
-- Attempting to use `c_loc()` on `class(bmi_wrf_hydro)` fails
-- Segfault when C code tries to dereference the Fortran pointer
-- Memory leaks in Python when finalize does not clean up the box
-
-**Phase to address:**
-ISO_C_BINDING wrapper implementation. This is the architectural foundation -- the `register_bmi` + box pattern must be designed first, then all 41 C-binding wrappers follow the same pattern.
+**Phase to address:** Phase 2c (first Python test). Must be solved immediately when testing the installed pymt_wrfhydro package. Document the mpi4py import requirement.
 
 ---
 
-### Pitfall 5: bmif_2_0 vs bmif_2_0_iso Module Mismatch
+### Pitfall 4: pip Build Dependencies from PyPI Conflict with Conda Compilers
 
 **What goes wrong:**
-The C-binding layer imports `bmif_2_0_iso` (SCHISM's version with ISO_C_BINDING types), but the BMI wrapper uses `bmif_2_0` (conda version). These are different modules with subtly different type definitions (e.g., `integer` vs `integer(kind=c_int)` for return values). Mixing them causes compile errors or, worse, silent ABI incompatibility at runtime.
+Running `pip install .` inside `pymt_wrfhydro/` triggers pip to install build dependencies (meson, meson-python, cython, numpy) from PyPI. These PyPI versions are incompatible with the conda-forge compilers (gfortran, gcc). The Meson build fails with cryptic compiler errors.
+
+This is a documented issue (babelizer GitHub issue #73): "The requirements listed in the build-system section [of pyproject.toml] are installed from PyPI with pip but are unfortunately incompatible with the conda compilers."
 
 **Why it happens:**
-SCHISM's iso_c_fortran_bmi library ships its own `bmif_2_0_iso` module (at `iso_c_fortran_bmi/src/bmi.f90`) which is a C-interoperable copy of the standard `bmif_2_0`. The standard `bmif_2_0` from conda uses plain `integer` for return types, while `bmif_2_0_iso` uses `integer(kind=c_int)`. On most platforms these are the same size (both 4 bytes), but this is NOT guaranteed by the Fortran standard.
-
-The SCHISM BMI switches between modules using `#ifdef NGEN_ACTIVE`:
-```fortran
-#ifdef NGEN_ACTIVE
-  use bmif_2_0_iso
-#else
-  use bmif_2_0
-#endif
+The babelizer-generated `pyproject.toml` specifies:
+```toml
+[build-system]
+requires = ["cython", "numpy", "meson-python", "wheel"]
+build-backend = "mesonpy"
 ```
+When `pip install .` runs WITH build isolation (the default), pip creates a fresh venv and installs these from PyPI. The PyPI meson may find the wrong compiler, the PyPI numpy may have ABI incompatibilities, and the overall build environment is inconsistent with the conda environment where gfortran 14.3.0 and the Fortran libraries live.
 
-**How to avoid:**
-**Recommended approach**: Keep `bmi_wrf_hydro.f90` using `bmif_2_0` (from conda, unchanged) and write the C-binding wrappers as a SEPARATE module (`bmi_wrf_hydro_c.f90` or `bmi_interop.f90`) that:
-- Uses `use bmiwrfhydrof` to access the Fortran BMI type
-- Uses `use, intrinsic :: iso_c_binding` for C types
-- Does NOT import `bmif_2_0_iso` at all
-- Uses `bmif_2_0` constants (BMI_SUCCESS, BMI_FAILURE, BMI_MAX_COMPONENT_NAME) directly
+**Consequences:**
+- Build fails with compiler errors unrelated to our code
+- Meson cannot find gfortran
+- Cython extension compiled against wrong numpy ABI
 
-This requires ZERO changes to the working, tested `bmi_wrf_hydro.f90` (1,919 lines, 151/151 tests pass).
+**Prevention:**
+1. **Install build deps with conda FIRST, then use --no-build-isolation:**
+   ```bash
+   conda install meson meson-python cython numpy wheel ninja -c conda-forge
+   pip install --no-build-isolation .
+   ```
+   This is the canonical fix documented in babelizer issue #73.
 
-**Warning signs:**
-- Compile errors about type mismatches between `integer` and `integer(c_int)`
-- Linker errors about duplicate or missing module symbols
-- Functions appear to succeed but return wrong status codes
-- Tests pass in Fortran but fail through the C-binding layer
+2. **Never use `pip install .` with build isolation** for Fortran-containing packages in conda environments.
 
-**Phase to address:**
-ISO_C_BINDING wrapper design (architecture decision). This must be decided BEFORE writing any C-binding code.
+3. **Verify all build tools are from conda:**
+   ```bash
+   which meson  # Should be $CONDA_PREFIX/bin/meson
+   which ninja  # Should be $CONDA_PREFIX/bin/ninja
+   which gfortran  # Should be $CONDA_PREFIX/bin/gfortran
+   ```
+
+**Detection:**
+- Error messages about missing compilers or wrong compiler versions
+- Build fails during Meson configure or during Cython compilation
+- Error mentions "Python dependency not found" in Meson output
+
+**Phase to address:** Phase 2b (build pymt_wrfhydro). Document the `--no-build-isolation` requirement as the FIRST instruction.
 
 ---
 
-### Pitfall 6: Circular Dependencies in Static Library Linking
+### Pitfall 5: Babelizer Version Mismatch with Meson Build System
 
 **What goes wrong:**
-The shared library build fails with undefined symbol errors even though all 22 WRF-Hydro libraries are listed on the link line. Symbols that exist in library A reference symbols in library B, and vice versa. Single-pass linking resolves symbols left-to-right and misses these circular references.
+The babelizer version on conda-forge (latest: 0.3.9) generates code targeting a specific Meson build configuration. Older babelizer versions used setuptools; the transition to meson-python happened in recent versions. Installing the wrong version produces either:
+- A setuptools-based package that requires `numpy.distutils` (removed in NumPy 2.0+)
+- A meson-based package that requires features not in the installed Meson version
 
 **Why it happens:**
-WRF-Hydro's 22 static libraries have circular dependencies. For example, `libhydro_routing.a` calls functions in `libhydro_mpp.a`, while `libhydro_mpp.a` calls functions in `libhydro_routing.a`. The GNU linker processes `.a` files in a single pass by default.
+The babelizer's template system evolved significantly:
+- Older versions (< 0.3.8): Used `numpy.distutils` + `setup.py` for building Fortran extensions
+- Current versions (0.3.9+): Use `meson-python` as the build backend
+- `numpy.distutils` was removed in NumPy 2.0 (released 2024), so old templates fail on modern environments
 
-The current `build.sh` handles this by listing all libraries THREE times:
-```bash
-${WRF_LIBS_SINGLE} ${WRF_LIBS_SINGLE} ${WRF_LIBS_SINGLE}
-```
-But `build.sh` uses `mpif90` which wraps the compiler and does not pass `--start-group`/`--end-group` correctly.
+Our conda environment likely has NumPy >= 2.0, so only the Meson-based babelizer templates will work.
 
-**How to avoid:**
-The CMakeLists.txt already has the correct solution:
-```cmake
--Wl,--start-group
-${WRFHYDRO_LIBRARIES}
--Wl,--end-group
-```
-This tells the GNU linker to scan the group repeatedly until all symbols are resolved. For the `build.sh` shared library build, use `gfortran` (not `mpif90`) to pass linker flags directly:
-```bash
-gfortran -shared -o libwrfhydro_bmi.so *.o \
-  -Wl,--start-group ${WRF_LIBS_SINGLE} -Wl,--end-group \
-  -lnetcdff -lnetcdf -lmpi_mpifh -lmpi
-```
+**Consequences:**
+- Build fails with "numpy.distutils is deprecated" or "ModuleNotFoundError: No module named 'numpy.distutils'"
+- Or build fails with Meson version incompatibilities
 
-**Warning signs:**
-- "undefined reference to `subroutine_name_`" errors during linking
-- Errors that go away when you repeat the library list 3-4 times
-- Different undefined symbols each time you reorder the libraries
-- Build works with executables (3x repetition) but fails for shared library
+**Prevention:**
+1. **Pin babelizer >= 0.3.9** (Meson-based templates):
+   ```bash
+   conda install "babelizer>=0.3.9" -c conda-forge
+   ```
+2. **Pin compatible meson-python:**
+   ```bash
+   conda install meson-python -c conda-forge
+   ```
+3. **Check babelizer version before starting:**
+   ```bash
+   babelize --version
+   # Must be >= 0.3.9 for Meson support
+   ```
 
-**Phase to address:**
-Shared Library Build. The CMakeLists.txt already addresses this; verify it works for the `.so` target.
+**Detection:**
+- `babelize init` generates `setup.py` instead of `meson.build` (old version)
+- Build fails with numpy.distutils import errors
+- Build fails with Meson version feature errors
+
+**Phase to address:** Phase 2a (environment setup). Verify version before running babelize init.
 
 ---
 
 ## Moderate Pitfalls
 
-### Pitfall 7: Working Directory (chdir) from Python
+---
+
+### Pitfall 6: bmi-tester Failures for Non-Standard BMI Implementations
 
 **What goes wrong:**
-WRF-Hydro's `initialize()` changes the working directory to the run directory (for reading namelists and data files), then changes back. But Python's `os.chdir()` and Fortran's `chdir()` operate on the SAME process working directory. If the Fortran `chdir` fails silently or does not restore the original directory, subsequent Python operations break.
+Running `bmi-test pymt_wrfhydro:WrfHydroBmi --config-file=bmi_config.nml` fails on tests for BMI functions that return `BMI_FAILURE` or behave non-standardly. Known failure points:
 
-**How to avoid:**
-1. **Short term**: Document that the Python test must be run from the correct working directory OR use absolute paths in the BMI config
-2. **Validation**: After each Fortran `initialize()` and `update()` call from Python, verify `os.getcwd()` is unchanged
-3. **WSL2 specific**: Ensure the run directory path is short (< 200 characters) to avoid `character(len=256)` truncation
+1. **get_value_ptr** -- Returns BMI_FAILURE for all variables (REAL vs double mismatch). The Cython layer translates this to a Python `RuntimeError`. bmi-tester may test this and fail.
 
-**Warning signs:**
-- FileNotFoundError in Python after calling BMI functions
-- WRF-Hydro writing output files to unexpected locations
-- Test works from the run directory but fails from other directories
+2. **get_value_at_indices / set_value_at_indices** -- Our int/float variants return BMI_FAILURE. If bmi-tester tests typed variants, these fail.
 
-**Phase to address:**
-Python test script.
+3. **Grid functions for unimplemented grid types** -- `get_grid_edge_nodes`, `get_grid_face_nodes`, `get_grid_face_edges`, `get_grid_nodes_per_face` all return BMI_FAILURE (not applicable for our grids). bmi-tester may test these.
+
+4. **Start time convention** -- There was a CSDMS discussion (#26) about bmi-tester expecting start time to be 0.0. Our wrapper returns 0.0 (correct), but if this convention changes, it could break.
+
+**Why it happens:**
+The BMI spec says models that do not implement a function should return `BMI_FAILURE`. However, bmi-tester may treat `BMI_FAILURE` as a test failure rather than a skip. The boundary between "not applicable" and "broken" is unclear in automated testing.
+
+**Consequences:**
+- bmi-tester reports failures that are actually expected behavior
+- Creates false impression that the BMI wrapper is broken
+- May block PyMT registration if bmi-tester pass is required
+
+**Prevention:**
+1. **Run bmi-tester early** to identify which tests fail and why
+2. **Document expected failures** with justification:
+   - `get_value_ptr`: Not implemented (REAL->double mismatch, copy-based get_value works)
+   - Grid edge/face functions: Not applicable for uniform rectilinear and vector grids
+3. **Check bmi-tester's skip/xfail mechanism** -- newer versions may support marking expected failures
+4. **Use `--config-file` and `--root-dir` flags** to ensure bmi-tester runs from the correct working directory with the correct config
+
+**Detection:**
+- bmi-tester reports X failures out of Y tests
+- Failures are all in get_value_ptr, grid topology, or at_indices functions
+- The model actually works correctly via get_value (copy-based)
+
+**Phase to address:** Phase 2c (validation). Run bmi-tester, categorize failures as genuine bugs vs expected non-implementation.
 
 ---
 
-### Pitfall 8: LD_LIBRARY_PATH Not Set for Runtime Loading
+### Pitfall 7: Working Directory Chaos with WRF-Hydro's chdir Pattern
 
 **What goes wrong:**
-The shared library compiles and links successfully, but at runtime Python's `ctypes.CDLL("libwrfhydro_bmi.so")` raises `OSError: cannot open shared object file: No such file or directory`.
+WRF-Hydro's BMI `initialize()` and `update()` call `chdir()` to the run directory (for reading namelists and writing output), then `chdir()` back. PyMT also changes directories: its `setup()` method creates a temporary run directory, and `update_until()` runs from the initialization folder. These competing `chdir()` calls on the same process can leave the working directory in an unexpected state.
 
-**How to avoid:**
-```bash
-export LD_LIBRARY_PATH=/path/to/bmi_wrf_hydro/_build:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
-```
-Or in Python use an absolute path:
-```python
-bmi = ctypes.CDLL("/absolute/path/to/libwrfhydro_bmi.so")
-```
-Verify with `ldd libwrfhydro_bmi.so` that ALL dependencies resolve.
+When bmi-tester or PyMT calls `initialize()`, our wrapper does:
+1. `getcwd(saved_dir)` -- save current dir
+2. `chdir(run_dir)` -- go to WRF-Hydro run dir
+3. Initialize WRF-Hydro (reads namelists from cwd)
+4. `chdir(saved_dir)` -- restore
 
-**Warning signs:**
-- "cannot open shared object file" errors
-- `ldd libwrfhydro_bmi.so` shows "not found" for any dependency
+But if PyMT calls `setup()` first, it creates a temp dir and sets expectations about where config files live. If our `initialize()` receives a relative path to the config file, the `chdir()` inside may break the relative path resolution.
 
-**Phase to address:**
-Python test script and build documentation.
+**Why it happens:**
+WRF-Hydro reads its namelists (`namelist.hrldas`, `hydro.namelist`) from the current working directory -- hardcoded behavior that cannot be changed without modifying WRF-Hydro source. Our BMI wrapper handles this by chdir'ing to the run directory. But bmi-tester and PyMT also manipulate the working directory.
 
----
+**Consequences:**
+- "File not found" errors for namelists or forcing data
+- Output files written to wrong directory
+- Tests pass when run manually but fail through bmi-tester/PyMT
 
-### Pitfall 9: MPI_Init Called Multiple Times or Not Called
-
-**What goes wrong:**
-WRF-Hydro requires MPI to be initialized before model initialization. If MPI is not initialized before `bmi_initialize`, the model crashes. If MPI is initialized twice (e.g., once by mpi4py and once inside WRF-Hydro), it crashes with "MPI already initialized."
-
-**How to avoid:**
-1. Check `MPI_Initialized` before calling `MPI_Init` inside the BMI initialize (guard in wrapper or document requirement)
-2. In the Python test: either import `mpi4py` first (which initializes MPI) OR run via `mpirun -np 1 python test.py`
-3. Document: "MPI must be initialized before calling BMI initialize"
-4. Never call `MPI_Finalize` from the BMI wrapper (already correctly handled in existing code)
-
-**Warning signs:**
-- Segfault immediately on `initialize()` from Python
-- "MPI not initialized" or "MPI already initialized" error messages
-- Tests pass with `mpirun -np 1` but fail when run directly
-
-**Phase to address:**
-Python test script and C-binding wrapper.
-
----
-
-### Pitfall 10: Array Memory Layout Mismatch (Column-Major vs Row-Major)
-
-**What goes wrong:**
-Python receives array data from `get_value_double` but 2D grid values appear transposed or scrambled.
-
-**How to avoid:**
-1. Document the memory layout: "All arrays from get_value are in Fortran column-major order"
-2. In Python, reshape with `order='F'`:
-   ```python
-   grid_2d = data.reshape((jx, ix), order='F')
+**Prevention:**
+1. **Use absolute paths in the BMI config file:**
    ```
-3. At the C boundary, arrays pass through as flat 1D -- no reshaping needed
+   &bmi_wrf_hydro_config
+     wrfhydro_run_dir = "/absolute/path/to/WRF_Hydro_Run_Local/run/"
+   /
+   ```
+2. **Use absolute path for the config file itself** when calling `initialize()`
+3. **Test with bmi-tester's `--root-dir` flag** to set the base directory
+4. **Add a post-update check** in the Python test that verifies `os.getcwd()` is unchanged after each BMI call
+5. **WSL2 specific:** Keep paths under 200 characters. Fortran `character(len=256)` allows up to 256 chars, but WRF-Hydro internally uses `character(len=80)` in some places, which can truncate long WSL2 paths like `/mnt/c/Users/username/Desktop/Projects/...`
 
-**Warning signs:**
-- Spatial plots show transposed features
-- Values at known grid locations are wrong but total sum is correct
+**Detection:**
+- "namelist.hrldas not found" or similar file-not-found errors
+- Tests work from one directory but not another
+- Different behavior between manual Python test and bmi-tester
 
-**Phase to address:**
-Python test script validation.
+**Phase to address:** Phase 2c (bmi-tester validation). Set up with absolute paths from the start.
 
 ---
 
-### Pitfall 11: Compiler Flag Mismatch Between WRF-Hydro and BMI Wrapper
+### Pitfall 8: Our C Binding Layer Conflicts with Babelizer's Generated Interop
 
 **What goes wrong:**
-The BMI shared library links successfully but produces wrong numerical results, or crashes in WRF-Hydro physics routines. The bit-for-bit match with standalone WRF-Hydro is broken.
+Our `bmi_wrf_hydro_c.f90` defines C-callable symbols like `bmi_initialize`, `bmi_update`, `bmi_finalize`, etc. The babelizer generates its own `bmi_interoperability.f90` with the SAME symbol names (`bmi_initialize`, `bmi_update`, etc.) but with DIFFERENT signatures (the generated ones take a `model_index` integer as the first argument).
 
-**How to avoid:**
-1. Use the same Fortran compiler version for both (already: gfortran 14.3.0)
-2. Match critical flags: `-fconvert=big-endian`, `-frecord-marker=4` (already in CMakeLists.txt)
-3. Match preprocessor defines: `-DWRF_HYDRO -DMPP_LAND` (already in CMakeLists.txt)
-4. When rebuilding WRF-Hydro with `-fPIC`, do NOT change any other flags
+When Meson compiles and links both files, you get either:
+- Duplicate symbol errors at link time
+- The wrong version of the function gets called (linker picks one, ignores the other)
 
-**Warning signs:**
-- Results differ between standalone and BMI-wrapped runs
-- Endian-related errors when reading binary files
-- Segfaults in physics routines
+**Why it happens:**
+Our C binding layer was built for ctypes testing -- it exposes a singleton pattern with no model index. The babelizer's interop layer uses a model_array pattern with model index. Both define `bind(C, name="bmi_initialize")` functions, but with different argument lists.
 
-**Phase to address:**
-Shared Library Build. Verify bit-for-bit match after rebuild.
+The babelizer's Meson build compiles `bmi_interoperability.f90` and links it against our `libbmiwrfhydrof.so`. If our library exports the conflicting C symbols, the linker has two definitions.
+
+**Consequences:**
+- Duplicate symbol linker error during pymt_wrfhydro build
+- Or silent symbol resolution to the wrong function, causing segfaults
+
+**Prevention:**
+1. **CRITICAL: Our C binding layer (`bmi_wrf_hydro_c.f90`) must NOT be compiled into `libbmiwrfhydrof.so`.**
+   - The shared library should only contain `bmi_wrf_hydro.f90` (the Fortran BMI module) and the WRF-Hydro static libraries.
+   - The C binding layer is for ctypes testing only and must be excluded from the shared library.
+   - Rebuild the .so WITHOUT `bmi_wrf_hydro_c.o` in the link line.
+
+2. **Or rename our C binding symbols** to avoid collision:
+   ```fortran
+   bind(C, name="wrfhydro_bmi_initialize")  ! Our test symbols
+   ```
+   Instead of:
+   ```fortran
+   bind(C, name="bmi_initialize")  ! Conflicts with babelizer
+   ```
+
+3. **Verify with `nm` that the shared library does not export conflicting symbols:**
+   ```bash
+   nm -D libbmiwrfhydrof.so | grep " T bmi_"
+   # Should NOT show bmi_initialize, bmi_update, etc.
+   # SHOULD show Fortran module symbols (__bmiwrfhydrof_MOD_...)
+   ```
+
+**Detection:**
+- "multiple definition of `bmi_initialize`" linker error during pip install
+- Segfault when babelizer's Cython calls the wrong bmi_initialize (ours expects no model_index, babelizer passes one)
+
+**Phase to address:** Phase 2a (pre-babelization). Rebuild libbmiwrfhydrof.so WITHOUT the C binding layer BEFORE running babelize init. This is a prerequisite.
+
+---
+
+### Pitfall 9: Fortran .mod File Version Incompatibility
+
+**What goes wrong:**
+The babelizer's Meson build compiles `bmi_interoperability.f90`, which contains `use bmiwrfhydrof`. Meson invokes gfortran to compile this file, and gfortran reads `bmiwrfhydrof.mod` from `$CONDA_PREFIX/include/`. If the `.mod` file was generated by a different version of gfortran than what Meson uses, compilation fails:
+```
+Fatal Error: Reading module 'bmiwrfhydrof' at line X column Y: Unexpected EOF
+```
+Or:
+```
+Fatal Error: Cannot read module file 'bmiwrfhydrof.mod': File format not recognized
+```
+
+**Why it happens:**
+Fortran `.mod` files are compiler-specific AND version-specific. A `.mod` file from gfortran 13.x cannot be read by gfortran 14.x (or vice versa). If we compiled our library with one gfortran version and the babelizer's Meson build uses a different version (e.g., system gfortran vs conda gfortran), the `.mod` file is unreadable.
+
+**Consequences:**
+- Build of pymt_wrfhydro fails during Fortran compilation of `bmi_interoperability.f90`
+- Error message is often cryptic ("Unexpected EOF" or "File format not recognized")
+
+**Prevention:**
+1. **Ensure the SAME gfortran is used throughout:**
+   ```bash
+   which gfortran  # Must be $CONDA_PREFIX/bin/gfortran
+   gfortran --version  # Must match what compiled libbmiwrfhydrof.so
+   ```
+2. **Build with `--no-build-isolation`** to ensure Meson uses the same compiler from the conda env
+3. **Set `FC` environment variable explicitly:**
+   ```bash
+   export FC=$CONDA_PREFIX/bin/gfortran
+   pip install --no-build-isolation .
+   ```
+4. **The .mod files and .so must be compiled by the same gfortran.** If you update gfortran, rebuild the .so and reinstall the .mod files.
+
+**Detection:**
+- "Cannot read module file" or "Unexpected EOF" errors during bmi_interoperability.f90 compilation
+- The error points to a `use` statement, not our code
+
+**Phase to address:** Phase 2b (pip install). Ensure consistent compiler before building.
+
+---
+
+### Pitfall 10: MPI_Init Not Called Before BMI Initialize
+
+**What goes wrong:**
+The babelized Python package calls `initialize()` but MPI has not been initialized. WRF-Hydro internally uses MPI calls (even in serial mode, np=1). Without `MPI_Init`, these calls segfault or produce "MPI not initialized" errors.
+
+Neither the babelizer's Cython layer nor PyMT calls `MPI_Init`. The responsibility falls on the user script.
+
+**Why it happens:**
+WRF-Hydro was designed to run with `mpirun`, which calls `MPI_Init` before `main()`. Our Fortran test programs (`bmi_wrf_hydro_test.f90`) explicitly call `MPI_Init`. But when loaded from Python, there is no automatic MPI initialization unless the user imports `mpi4py`.
+
+**Consequences:**
+- Segfault on `initialize()` from Python
+- "MPI_COMM_WORLD is not a valid communicator" error
+- Works with `mpirun -np 1 python script.py` but fails with `python script.py`
+
+**Prevention:**
+1. **Document: "Import mpi4py.MPI before using WrfHydroBmi"**
+2. **Add guard in wrapper:**
+   ```python
+   # In pymt_wrfhydro/__init__.py
+   try:
+       from mpi4py import MPI
+   except ImportError:
+       raise ImportError(
+           "pymt_wrfhydro requires mpi4py. Install with: conda install mpi4py"
+       )
+   ```
+3. **Add mpi4py to package requirements** in babel.toml:
+   ```toml
+   [package]
+   requirements = ["mpi4py"]
+   ```
+
+**Detection:**
+- Segfault or "MPI not initialized" on first `initialize()` call
+- Works when run with `mpirun -np 1` but not standalone
+
+**Phase to address:** Phase 2a (babel.toml configuration) and Phase 2c (first Python test).
 
 ---
 
 ## Minor Pitfalls
 
-### Pitfall 12: Fortran Module (.mod) Files Not Installed
+---
 
-**What goes wrong:** CMake builds the `.so` but `.mod` files are not installed to `$CONDA_PREFIX/include/`. Phase 2 (babelizer) cannot find the Fortran module.
+### Pitfall 11: WSL2 Long Path Truncation in Meson Build
 
-**How to avoid:** The existing CMakeLists.txt Section 10 already has install rules for `.mod` files. Verify after `cmake --install _build` that the files appear.
+**What goes wrong:**
+Meson creates build directories with long paths (e.g., `pymt_wrfhydro/build/cp312-cp312-linux_x86_64/`). Combined with the already-long WSL2 mount path (`/mnt/c/Users/mohansai/Desktop/Projects/VS_Code/WRF-Hydro-BMI/`), the total path can exceed Fortran's `character(len=80)` or `character(len=256)` limits used in WRF-Hydro namelists and our config file.
 
-**Phase to address:** Shared Library Build (install step).
+**Prevention:**
+- Work from a short base path (e.g., `/home/mohansai/wrfhydro-bmi/`)
+- Or create a symlink: `ln -s /mnt/c/Users/.../WRF-Hydro-BMI ~/wbmi`
+- Use absolute paths that are as short as possible in all config files
+
+**Detection:**
+- Path truncation errors or "file not found" for paths that clearly exist
+- Works when project is at a shorter path
+
+**Phase to address:** Phase 2 setup. Consider working from `$HOME` instead of `/mnt/c/`.
 
 ---
 
-### Pitfall 13: Python Test Hardcodes Array Sizes
+### Pitfall 12: get_var_type Returns "double precision" but WRF-Hydro Stores REAL
 
-**What goes wrong:** Test hardcodes sizes (e.g., 240 for LSM grid) that only work for Croton NY. Other domains break.
+**What goes wrong:**
+Our `get_var_type()` returns `"double precision"` for all variables. The babelizer's Cython layer maps this to `numpy.float64` and calls `bmi_get_value_double`. Our `get_value_double` internally copies from WRF-Hydro's single-precision REAL arrays to double-precision output buffers.
 
-**How to avoid:** Query sizes from BMI functions (`get_grid_size`) before allocating arrays.
+This works correctly but is semantically misleading: we report the TYPE as double precision when the actual storage is single precision. If bmi-tester or PyMT verifies type consistency (checking that `get_var_type` matches actual data precision), this mismatch could be flagged.
 
-**Phase to address:** Python test script.
+**Prevention:**
+- This is already working correctly (REAL->double copy happens transparently)
+- Document in the package that variables are stored as REAL but exposed as double
+- If bmi-tester flags this, consider changing `get_var_type` to return `"real"` and implementing `get_value_float` instead (requires more wrapper changes)
+- The Cython DTYPE_F_TO_PY mapping recognizes both `"real"` (float32) and `"double precision"` (float64)
 
----
-
-### Pitfall 14: stderr vs stdout Confusion
-
-**What goes wrong:** WRF-Hydro redirects stdout (unit 6) to `diag_hydro.00000`. Debug output from C-binding wrappers or Python test disappears into the file.
-
-**How to avoid:** Use `write(0,*)` (stderr) in Fortran for any debug output. In Python, use `sys.stderr`.
-
-**Phase to address:** ISO_C_BINDING wrappers and Python test script.
+**Phase to address:** Phase 2c (bmi-tester validation). Only change if bmi-tester actually flags it.
 
 ---
 
-### Pitfall 15: WRF-Hydro Single-Instance Constraint
+### Pitfall 13: Missing wrfhydro_bmi_state_mod.mod in Installed Files
 
-**What goes wrong:** The box pattern supports multiple instances, but WRF-Hydro uses module-level globals (SMOIS, rt_domain, etc.) that cannot be re-allocated. A second `register_bmi` call creates a second handle pointing to the same global state.
+**What goes wrong:**
+Our `bmi_wrf_hydro.f90` defines TWO modules in one file:
+1. `wrfhydro_bmi_state_mod` (state persistence, lines 1-25)
+2. `bmiwrfhydrof` (the actual BMI module, lines 28+)
 
-**How to avoid:** Add a singleton guard in the C-binding module:
-```fortran
-logical, save :: instance_registered = .false.
-! In register_bmi:
-if (instance_registered) then
-  bmi_status = BMI_FAILURE
-  return
-end if
-```
+When the babelizer's `bmi_interoperability.f90` does `use bmiwrfhydrof`, gfortran reads `bmiwrfhydrof.mod`. But `bmiwrfhydrof.mod` has an internal dependency on `wrfhydro_bmi_state_mod.mod`. If `wrfhydro_bmi_state_mod.mod` is not installed to `$CONDA_PREFIX/include/`, compilation fails.
 
-**Phase to address:** ISO_C_BINDING wrapper (register_bmi implementation).
+**Prevention:**
+- Install BOTH .mod files to `$CONDA_PREFIX/include/`:
+  ```bash
+  cp bmiwrfhydrof.mod wrfhydro_bmi_state_mod.mod $CONDA_PREFIX/include/
+  ```
+- Verify both exist before attempting babelization
+- The pkg-config `Cflags` must include the path to both: `-I$CONDA_PREFIX/include`
+
+**Detection:**
+- "Cannot read module file 'wrfhydro_bmi_state_mod.mod'" during bmi_interoperability.f90 compilation
+- Build of pymt_wrfhydro fails at Fortran compile step
+
+**Phase to address:** Phase 2a (pre-babelization). Ensure all .mod files are installed.
 
 ---
 
-## Technical Debt Patterns
+### Pitfall 14: babelizer Editable Install Does Not Work for Fortran
 
-Shortcuts that seem reasonable but create long-term problems.
+**What goes wrong:**
+Attempting `pip install -e .` (editable install) for the babelized package fails because Meson editable installs for Fortran extensions require all build dependencies to remain available at execution time. The extension is rebuilt on every import, which is slow and fragile.
 
-| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
-|----------|-------------------|----------------|-----------------|
-| Skip `register_bmi` and use module-level singleton | Simpler C API (no handle passing) | Cannot support babelizer or NextGen; both expect `register_bmi` | Never -- babelizer requires it |
-| Hardcode MPI_COMM_WORLD | Works for serial (np=1) | Breaks multi-model coupling where each model needs its own communicator | Phase 1 only; parameterize by Phase 4 |
-| Copy iso_c_bmi.f90 from SCHISM verbatim | Get C bindings quickly | Uses `bmif_2_0_iso` which conflicts with conda `bmif_2_0` | Never -- adapt to use `bmif_2_0` instead |
-| Use ctypes instead of cffi for Python test | Simpler, no extra dependency | ctypes has weaker type safety | Acceptable for testing; babelizer replaces this in Phase 2 |
-| Skip `get_value_ptr` C binding (return BMI_FAILURE) | Avoid pointer-across-boundary complexity | Some frameworks expect it for zero-copy | Acceptable -- already BMI_FAILURE in Fortran; consistent |
+**Prevention:**
+- Use regular install: `pip install --no-build-isolation .` (NOT `-e .`)
+- For development iteration, uninstall and reinstall:
+  ```bash
+  pip uninstall pymt_wrfhydro
+  pip install --no-build-isolation .
+  ```
+- If editable install is needed, install all build deps with conda first AND use `--no-build-isolation`
 
-## Integration Gotchas
+**Detection:**
+- `pip install -e .` fails with Meson/linker errors
+- Or install succeeds but import triggers slow rebuild every time
 
-Common mistakes when connecting components in this project.
+**Phase to address:** Phase 2b (build process). Use regular install from the start.
 
-| Integration | Common Mistake | Correct Approach |
-|-------------|----------------|------------------|
-| Python ctypes -> Fortran strings | Using `ctypes.c_char_p` directly | Use `ctypes.create_string_buffer(b"config.txt\0")` with explicit null |
-| Python ctypes -> Fortran arrays | Passing Python list | Use `numpy.zeros(n, dtype=numpy.float64)` + `.ctypes.data_as(POINTER(c_double))` |
-| Conda env -> shared library | Forgetting conda activation | Add conda activation to all scripts; use absolute `$CONDA_PREFIX/lib` paths |
-| CMake build vs build.sh | Assuming identical outputs | CMake: `--start-group`/`--end-group`; build.sh: 3x repetition; CMake adds `-fPIC` for SHARED |
-| babelizer -> libwrfhydro_bmi.so | Missing `register_bmi` entry point | Must implement `register_bmi` with `bind(C)` returning opaque handle |
-| Python -> MPI library | Loading BMI library before MPI | Must load `libmpi.so` with `RTLD_GLOBAL` first, THEN `libwrfhydro_bmi.so` |
+---
 
-## Performance Traps
+### Pitfall 15: NetCDF/HDF5 Library Conflicts
 
-Patterns that work at small scale but fail as usage grows.
+**What goes wrong:**
+The babelized package links against `libbmiwrfhydrof.so`, which depends on `libnetcdff.so` and `libnetcdf.so`. If the Python environment also has NetCDF/HDF5 libraries (via xarray, h5py, etc.), there can be symbol conflicts or version mismatches when both are loaded in the same process.
 
-| Trap | Symptoms | Prevention | When It Breaks |
-|------|----------|------------|----------------|
-| `get_value_at_indices` allocates full array then picks elements | Slow for sparse access | Currently acceptable; optimize if profiling shows bottleneck | NWM-scale grids (2.7M reaches) |
-| String comparison in select case for every get/set | O(n) string compare per call | Use integer variable IDs internally | > 100 variables or tight coupling loops |
-| `chdir()` in every `update()` call | Filesystem overhead + not thread-safe | Cache run directory; use absolute paths | Multi-instance or threaded coupling |
-| Full array copy in `get_value_double` (REAL -> double) | Allocation + copy every call | Consider shadow double arrays | Large grids with frequent coupling |
+**Prevention:**
+- Use conda for ALL dependencies (ensures consistent NetCDF/HDF5 versions)
+- Verify with `ldd libbmiwrfhydrof.so` that NetCDF resolves to conda's version
+- Test importing alongside common scientific Python packages (xarray, h5py)
 
-## "Looks Done But Isn't" Checklist
+**Detection:**
+- Segfault or HDF5 version mismatch errors when importing alongside xarray
+- "HDF5 header version mismatch" warnings
 
-Things that appear complete but are missing critical pieces.
+**Phase to address:** Phase 2c (integration testing). Test with a realistic Python environment.
 
-- [ ] **Shared library builds**: Verify `ldd libwrfhydro_bmi.so` -- ALL dependencies resolved (no "not found")
-- [ ] **C-binding wrappers**: Verify ALL 41 BMI functions have C wrappers. Babelizer calls ALL of them
-- [ ] **register_bmi function**: Not a standard BMI function but REQUIRED by iso_c_bmi/babelizer pattern. Must be `bind(C)` with box allocation
-- [ ] **String output functions**: Verify null terminators on get_component_name, get_var_type, get_var_units, get_time_units, get_grid_type, get_var_location
-- [ ] **MPI lifecycle**: Verify MPI_Init called before initialize, MPI_Finalize after finalize, double-init guarded
-- [ ] **Grid functions via C binding**: C wrapper must determine array sizes (via get_grid_rank, get_grid_size) before passing assumed-size arrays. See SCHISM's `get_grid_shape` wrapper
-- [ ] **Memory cleanup in finalize**: C-binding `finalize` must deallocate BOTH model object AND box wrapper
-- [ ] **Python test validates results**: Not just BMI_SUCCESS but actual numerical values match standalone WRF-Hydro (Croton NY bit-for-bit)
+---
+
+## Phase-Specific Warnings
+
+| Phase Topic | Likely Pitfall | Mitigation |
+|-------------|---------------|------------|
+| Environment setup | P5: Wrong babelizer version | Pin `babelizer>=0.3.9`, verify with `babelize --version` |
+| Environment setup | P4: PyPI vs conda deps | Install all build deps with conda first |
+| babel.toml writing | P2: Singleton not documented | Add instance guard to wrapper before babelizing |
+| babel.toml writing | P10: MPI requirement | Add mpi4py to requirements |
+| babelize init | P8: C binding symbol conflict | Rebuild .so WITHOUT bmi_wrf_hydro_c.o |
+| babelize init | P13: Missing .mod files | Install all .mod files before babelizing |
+| pip install | P1: pkg-config not found | Use --no-build-isolation + PKG_CONFIG_PATH |
+| pip install | P9: .mod version mismatch | Same gfortran throughout + FC env var |
+| pip install | P14: Editable install fails | Use regular pip install, not -e |
+| First Python test | P3: MPI RTLD_GLOBAL crash | Import mpi4py before pymt_wrfhydro |
+| First Python test | P7: Working directory chaos | Use absolute paths everywhere |
+| bmi-tester | P6: Expected failures | Document which failures are by-design |
+| bmi-tester | P12: Type reporting | Monitor if "double precision" causes issues |
+| WSL2 platform | P11: Long path truncation | Work from short base path |
+| WSL2 platform | P15: Library conflicts | Use conda for all deps |
+
+---
+
+## Priority Order for Prevention
+
+Address these pitfalls in this order (most blocking first):
+
+1. **P8: C binding conflict** -- Must rebuild .so without C bindings BEFORE babelizing
+2. **P13: Missing .mod files** -- Must install ALL .mod files BEFORE babelizing
+3. **P5: Babelizer version** -- Must verify correct version BEFORE babelize init
+4. **P1: pkg-config discovery** -- Must verify BEFORE pip install
+5. **P4: PyPI vs conda build deps** -- Must install conda deps BEFORE pip install
+6. **P9: gfortran version consistency** -- Must verify BEFORE pip install
+7. **P3: MPI RTLD_GLOBAL** -- Must solve BEFORE first Python test
+8. **P10: MPI_Init** -- Must solve BEFORE first initialize() call
+9. **P2: Singleton guard** -- Should add BEFORE babelizing (or document)
+10. **P7: Working directory** -- Must use absolute paths from the start
+11. **P6: bmi-tester failures** -- Address during validation
+12. **P11-P15: Minor issues** -- Address as encountered
+
+---
 
 ## Recovery Strategies
 
-When pitfalls occur despite prevention, how to recover.
-
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| WRF-Hydro not compiled with -fPIC | LOW | Rebuild with `CMAKE_POSITION_INDEPENDENT_CODE=ON`, ~5 min compile |
-| String passing segfaults | LOW | Add c_to_f_string/f_to_c_string helpers; mechanical pattern |
-| MPI RTLD_GLOBAL segfault | LOW | Add 2 lines to Python (`import mpi4py` or `CDLL("libmpi.so", RTLD_GLOBAL)`) |
-| Box pattern missing | MEDIUM | Write `register_bmi` + refactor all C wrappers to use handle pattern |
-| bmif_2_0 vs bmif_2_0_iso mismatch | MEDIUM | Keep separate C-wrapper module using only `bmif_2_0` (recommended) |
-| Circular link dep errors | LOW | Already solved in CMakeLists.txt; verify for `.so` target |
-| Working directory issues | LOW | Use absolute paths; document requirement |
-| Array layout mismatch | LOW | Add `order='F'` to numpy reshape; document convention |
-| Compiler flag mismatch | MEDIUM | Rebuild everything with matching flags; verify bit-for-bit |
+| P1: pkg-config not found | LOW | Set PKG_CONFIG_PATH, use --no-build-isolation |
+| P2: Singleton crash | MEDIUM | Add instance counter to bmi_wrf_hydro.f90, rebuild .so |
+| P3: MPI RTLD_GLOBAL | LOW | Add `from mpi4py import MPI` to test script |
+| P4: PyPI build deps | LOW | `conda install` build deps, use --no-build-isolation |
+| P5: Wrong babelizer version | LOW | `conda install babelizer>=0.3.9` |
+| P6: bmi-tester failures | LOW | Document expected failures, no code change needed |
+| P7: Working directory | LOW | Switch to absolute paths in config |
+| P8: C binding conflict | MEDIUM | Rebuild .so without bmi_wrf_hydro_c.o, re-babelize |
+| P9: .mod version mismatch | MEDIUM | Rebuild everything with same gfortran, reinstall .mod |
+| P10: MPI_Init missing | LOW | Add mpi4py import or requirement |
+| P11: Long paths | LOW | Work from shorter base path |
+| P12: Type reporting | LOW | Change get_var_type return if needed |
+| P13: Missing .mod | LOW | Copy additional .mod files to $CONDA_PREFIX/include |
+| P14: Editable install | LOW | Use regular install instead |
+| P15: Library conflicts | MEDIUM | Ensure all deps from same conda env |
 
-## Pitfall-to-Phase Mapping
-
-How roadmap phases should address these pitfalls.
-
-| Pitfall | Prevention Phase | Verification |
-|---------|------------------|--------------|
-| P1: WRF-Hydro no -fPIC | Shared Library Build (first task) | Linker succeeds; `ldd` shows all deps resolved |
-| P2: String passing | ISO_C_BINDING Wrappers | Python calls all string-taking functions without crash |
-| P3: MPI RTLD_GLOBAL | Python Test Script | `initialize()` returns BMI_SUCCESS from Python |
-| P4: Box/register_bmi | ISO_C_BINDING Wrappers (design first) | `register_bmi` returns valid handle; all funcs work through handle |
-| P5: bmif_2_0 vs _iso | ISO_C_BINDING Wrappers (arch decision) | Compile succeeds; Fortran tests still 151/151 |
-| P6: Circular link deps | Shared Library Build (CMake) | `cmake --build` succeeds; no undefined symbols |
-| P7: Working directory | Python Test Script | `os.getcwd()` unchanged after BMI calls |
-| P8: LD_LIBRARY_PATH | Python Test + Docs | Python finds and loads `.so` without path issues |
-| P9: MPI_Init lifecycle | Python Test + C Wrappers | No double-init or uninitialized-MPI crashes |
-| P10: Array layout | Python Test + Docs | Streamflow at Croton NY outlets matches standalone |
-| P11: Compiler flags | Shared Library Build | Numerical results match within float tolerance |
-| P12: .mod not installed | Shared Library Install | `ls $CONDA_PREFIX/include/*.mod` finds files |
-| P13: Hardcoded sizes | Python Test Script | Test queries sizes dynamically from BMI |
-| P14: stderr vs stdout | ISO_C_BINDING Wrappers | Debug output visible in terminal, not swallowed |
-| P15: Single-instance | ISO_C_BINDING Wrappers | Second register_bmi returns BMI_FAILURE |
+---
 
 ## Sources
 
-- [SCHISM BMI iso_c_bmi.f90](file:///mnt/c/Users/mohansai/Desktop/Projects/VS_Code/WRF-Hydro-BMI/SCHISM_BMI/src/BMI/iso_c_fortran_bmi/src/iso_c_bmi.f90) -- 948-line reference implementation of C-binding wrappers (HIGH confidence, direct code inspection)
-- [SCHISM BMI register_bmi](file:///mnt/c/Users/mohansai/Desktop/Projects/VS_Code/WRF-Hydro-BMI/SCHISM_BMI/src/BMI/bmischism.f90) -- Lines 1701-1727, box pattern (HIGH confidence, direct code inspection)
-- [SCHISM iso_c_fortran_bmi README](file:///mnt/c/Users/mohansai/Desktop/Projects/VS_Code/WRF-Hydro-BMI/SCHISM_BMI/src/BMI/iso_c_fortran_bmi/README.md) -- register_bmi + box pattern docs (HIGH confidence)
-- [Open MPI dlopen documentation](https://docs.open-mpi.org/en/v5.0.7/tuning-apps/dynamic-loading.html) -- Official docs on RTLD_GLOBAL requirement (HIGH confidence)
-- [Open MPI GitHub issue #3705](https://github.com/open-mpi/ompi/issues/3705) -- dlopen RTLD_LOCAL issue (HIGH confidence)
-- [GNU Fortran ISO_C_BINDING](https://gcc.gnu.org/onlinedocs/gfortran/ISO_005fC_005fBINDING.html) -- Official gfortran C interop docs (HIGH confidence)
-- [Fortran Discourse: Shared libraries with bind(C)](https://fortran-lang.discourse.group/t/shared-libraries-with-bind-c-for-dummies/6566) -- Community discussion (MEDIUM confidence)
-- [Foreign Fortran: ctypes](https://foreign-fortran.readthedocs.io/en/latest/python/ctypes.html) -- Python ctypes + Fortran practices (MEDIUM confidence)
-- [CSDMS babelizer](https://babelizer.readthedocs.io/en/latest/readme.html) -- Library requirements for babelizer (MEDIUM confidence)
-- [bmi_wrf_hydro.f90](file:///mnt/c/Users/mohansai/Desktop/Projects/VS_Code/WRF-Hydro-BMI/bmi_wrf_hydro/src/bmi_wrf_hydro.f90) -- Current BMI wrapper analyzed for C-binding readiness (HIGH confidence)
-- [build.sh](file:///mnt/c/Users/mohansai/Desktop/Projects/VS_Code/WRF-Hydro-BMI/bmi_wrf_hydro/build.sh) -- Current build process analyzed for shared library gaps (HIGH confidence)
-- [CMakeLists.txt](file:///mnt/c/Users/mohansai/Desktop/Projects/VS_Code/WRF-Hydro-BMI/bmi_wrf_hydro/CMakeLists.txt) -- 649-line CMake config analyzed for correctness (HIGH confidence)
+### HIGH Confidence (source code verified)
+- [CSDMS babelizer repository](https://github.com/csdms/babelizer) -- bmi_interoperability.f90 template, meson.build template, config.py validation (direct source code analysis)
+- [Babelizer issue #73](https://github.com/csdms/babelizer/issues/73) -- PyPI vs conda compiler conflict (documented fix)
+- [Open MPI docs: Dynamic loading](https://docs.open-mpi.org/en/v5.0.7/tuning-apps/dynamic-loading.html) -- RTLD_GLOBAL requirement (official documentation)
+- [Open MPI issue #3705](https://github.com/open-mpi/ompi/issues/3705) -- dlopen RTLD_LOCAL issue (official issue)
+- [CSDMS discussion #26](https://github.com/orgs/csdms/discussions/26) -- BMI start time convention
+- [Meson issue #14461](https://github.com/mesonbuild/meson/issues/14461) -- PKG_CONFIG_LIBDIR discarded
+- Local: `bmi_wrf_hydro/src/bmi_wrf_hydro.f90` -- module structure, get_var_type returns, get_value_ptr behavior
+- Local: `bmi_wrf_hydro/src/bmi_wrf_hydro_c.f90` -- C binding symbols that conflict with babelizer
+- Local: `.planning/research/CSDMS_BABELIZER_OFFICIAL.md` -- babelizer architecture verified from source
+
+### MEDIUM Confidence (multiple sources agree)
+- [Meson pkgconfig documentation](https://mesonbuild.com/Pkgconfig-module.html) -- pkg-config discovery patterns
+- [meson-python editable installs](https://meson-python.readthedocs.io/en/latest/how-to-guides/editable-installs.html) -- editable install limitations
+- [BMI time functions](https://bmi.csdms.io/en/stable/bmi.time_funcs.html) -- time convention documentation
+- [BMI getter/setter docs](https://bmi.csdms.io/en/stable/bmi.getter_setter.html) -- get_value_ptr specification
+- [mpi4py documentation](https://mpi4py.readthedocs.io/en/stable/overview.html) -- MPI initialization handling
+- [bmi-tester repository](https://github.com/csdms/bmi-tester) -- test structure and behavior
+
+### LOW Confidence (inference from patterns)
+- Singleton model behavior with babelizer model_array -- inferred from template code, no documented test cases
+- WSL2 path length issues with Meson -- inferred from known Fortran character limits, no specific Meson reports
 
 ---
-*Pitfalls research for: Fortran BMI shared library with C bindings and Python interop*
-*Researched: 2026-02-23*
+*Pitfalls research for: Babelizing WRF-Hydro BMI shared library into pymt_wrfhydro*
+*Researched: 2026-02-24*
