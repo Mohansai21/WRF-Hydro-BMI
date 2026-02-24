@@ -145,6 +145,14 @@ fi
 ${FC} ${FFLAGS} ${EXTRA_FFLAGS} ${INCLUDES} ${MOD_OUT} "${SRC_DIR}/bmi_wrf_hydro.f90" -o "${BUILD_DIR}/bmi_wrf_hydro.o"
 echo "    -> build/bmi_wrf_hydro.o created"
 
+echo "=== Step 1b: Compile src/bmi_wrf_hydro_c.f90 (C binding layer) ==="
+${FC} ${FFLAGS} ${EXTRA_FFLAGS} \
+  -ffree-form -ffree-line-length-none -fconvert=big-endian -frecord-marker=4 \
+  -fallow-argument-mismatch \
+  ${INCLUDES} ${MOD_OUT} \
+  "${SRC_DIR}/bmi_wrf_hydro_c.f90" -o "${BUILD_DIR}/bmi_wrf_hydro_c.o"
+echo "    -> build/bmi_wrf_hydro_c.o created"
+
 # ========== Step 2 (shared mode): Build libbmiwrfhydrof.so ==========
 if [ "$USE_SHARED" = "true" ]; then
   echo ""
@@ -186,6 +194,7 @@ if [ "$USE_SHARED" = "true" ]; then
   # NOTE: Uses our -fPIC recompiled .o files from build/, NOT the originals
   gfortran -shared -o "${BUILD_DIR}/libbmiwrfhydrof.so" \
     "${BUILD_DIR}/bmi_wrf_hydro.o" \
+    "${BUILD_DIR}/bmi_wrf_hydro_c.o" \
     "${BUILD_DIR}/module_NoahMP_hrldas_driver.F.o" \
     "${BUILD_DIR}/module_hrldas_netcdf_io.F.o" \
     -Wl,--whole-archive ${WRF_STATIC_LIBS_FULL} -Wl,--no-whole-archive \
@@ -206,6 +215,7 @@ link_executable() {
   echo "    Linking ${OUT_NAME} (static)..."
   mpif90 -o "${BUILD_DIR}/${OUT_NAME}" \
     "${BUILD_DIR}/bmi_wrf_hydro.o" \
+    "${BUILD_DIR}/bmi_wrf_hydro_c.o" \
     "${OBJ_FILE}" \
     "${WRF_OBJ}/module_NoahMP_hrldas_driver.F.o" \
     "${WRF_OBJ}/module_hrldas_netcdf_io.F.o" \
