@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** WRF-Hydro must be controllable from Python via PyMT -- babelize init must produce a working pymt_wrfhydro package
-**Current focus:** Phase 5 (Library Hardening) COMPLETE -- ready for Phase 6 (Babelizer Env + Skeleton)
+**Current focus:** Phase 6 (Babelizer Env + Skeleton) COMPLETE -- ready for Phase 7 (Package Build)
 
 ## Current Position
 
-Phase: 5 of 9 (Library Hardening) -- COMPLETE
-Plan: 2 of 2
-Status: Phase 5 complete
-Last activity: 2026-02-25 -- Completed 05-02 (documentation update for C binding removal)
+Phase: 6 of 9 (Babelizer Environment + Skeleton) -- COMPLETE
+Plan: 1 of 1
+Status: Phase 6 complete
+Last activity: 2026-02-25 -- Completed 06-01 (babelizer toolchain + babel.toml + pymt_wrfhydro skeleton)
 
-Progress: [██████░░░░] 73% (v1.0 complete: 6/6 plans; v2.0: 2/? plans)
+Progress: [███████░░░] 78% (v1.0 complete: 6/6 plans; v2.0: 3/? plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8 (v1.0: 6, v2.0: 2)
-- Average duration: 6.6 min
-- Total execution time: 0.9 hours
+- Total plans completed: 9 (v1.0: 6, v2.0: 3)
+- Average duration: 6.3 min
+- Total execution time: 0.95 hours
 
 **By Phase (v1.0 Shared Library):**
 
@@ -37,6 +37,7 @@ Progress: [██████░░░░] 73% (v1.0 complete: 6/6 plans; v2.0: 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 5. Library Hardening | 2/2 | 13 min | 6.5 min |
+| 6. Babelizer Env + Skeleton | 1/1 | 5 min | 5 min |
 
 *Updated after each plan completion*
 
@@ -50,15 +51,19 @@ Progress: [██████░░░░] 73% (v1.0 complete: 6/6 plans; v2.0: 
 - [v2.0]: pip --no-build-isolation MANDATORY for all pip install commands
 - [v2.0]: PyMT installed separately in final phase to isolate large dep tree
 - [v2.0 Phase 5]: CLAUDE.md and Doc 16 updated to reflect C binding removal (no stale references for future sessions)
+- [v2.0 Phase 6]: babel.toml license must be "MIT License" not "MIT" (cookiecutter choice constraint)
+- [v2.0 Phase 6]: Babelizer 0.3.9 generates setup.py (not meson.build) -- acceptable for Python 3.10
+- [v2.0 Phase 6]: Dry-run build reveals `undefined symbol: hydro_stop_` -- Phase 7 must resolve shared library linking
 
 ### Blockers/Concerns
 
+- [Phase 7]: `undefined symbol: hydro_stop_` when importing pymt_wrfhydro -- libbmiwrfhydrof.so needs hydro_stop_ resolved
 - [Phase 8]: bmi-tester Stage 3 vector grid behavior for grid 2 (channel) -- needs live verification
 - [Phase 9]: PyMT + OpenMPI 5.0.8 ABI compatibility -- test with --dry-run before install
 
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 05-02-PLAN.md (documentation update for C binding removal)
+Stopped at: Completed 06-01-PLAN.md (babelizer toolchain + babel.toml + pymt_wrfhydro skeleton)
 Resume file: None
-Next action: /gsd:plan-phase 06-babelizer-env (Phase 6: Babelizer Environment + Skeleton)
+Next action: /gsd:plan-phase 07-package-build (Phase 7: Package Build)

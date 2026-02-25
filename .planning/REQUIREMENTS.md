@@ -16,9 +16,9 @@ Requirements for the babelizer milestone. Each maps to roadmap phases.
 
 ### Environment & Configuration
 
-- [ ] **ENV-01**: 6 conda packages installed: babelizer, meson-python, meson, ninja, cython, python-build
-- [ ] **ENV-02**: `babel.toml` written with correct naming chain: `library = "bmiwrfhydrof"`, `entry_point = "bmi_wrf_hydro"`, `package.name = "pymt_wrfhydro"`, `mpi4py` in requirements
-- [ ] **ENV-03**: `babelize init babel.toml` generates `pymt_wrfhydro/` directory with all auto-generated files (bmi_interoperability.f90, .pyx, meson.build, pyproject.toml)
+- [x] **ENV-01**: 6 conda packages installed: babelizer, meson-python, meson, ninja, cython, python-build
+- [x] **ENV-02**: `babel.toml` written with correct naming chain: `library = "bmiwrfhydrof"`, `entry_point = "bmi_wrf_hydro"`, `package.name = "pymt_wrfhydro"`, `mpi4py` in requirements
+- [x] **ENV-03**: `babelize init babel.toml` generates `pymt_wrfhydro/` directory with all auto-generated files (bmi_interoperability.f90, .pyx, meson.build, pyproject.toml)
 
 ### Package Build
 
@@ -83,9 +83,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LIB-02 | Phase 5 | Complete |
 | LIB-03 | Phase 5 | Complete |
 | LIB-04 | Phase 5 | Complete |
-| ENV-01 | Phase 6 | Pending |
-| ENV-02 | Phase 6 | Pending |
-| ENV-03 | Phase 6 | Pending |
+| ENV-01 | Phase 6 | Complete |
+| ENV-02 | Phase 6 | Complete |
+| ENV-03 | Phase 6 | Complete |
 | BUILD-01 | Phase 7 | Pending |
 | BUILD-02 | Phase 7 | Pending |
 | BUILD-03 | Phase 7 | Pending |

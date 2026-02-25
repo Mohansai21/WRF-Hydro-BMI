@@ -75,7 +75,7 @@ Plans:
 **Milestone Goal:** Babelize WRF-Hydro's shared library into a `pymt_wrfhydro` Python package, validated against Croton NY reference data and registered with PyMT.
 
 - [x] **Phase 5: Library Hardening** - Rebuild libbmiwrfhydrof.so without conflicting C binding symbols and verify all prerequisites for babelization
-- [ ] **Phase 6: Babelizer Environment + Skeleton** - Install babelizer toolchain, write babel.toml, generate pymt_wrfhydro package skeleton
+- [x] **Phase 6: Babelizer Environment + Skeleton** - Install babelizer toolchain, write babel.toml, generate pymt_wrfhydro package skeleton
 - [ ] **Phase 7: Package Build** - Build and install pymt_wrfhydro so it imports and runs from Python
 - [ ] **Phase 8: BMI Compliance Validation** - Pass bmi-tester stages and validate Croton NY results from Python match Fortran reference
 - [ ] **Phase 9: PyMT Integration** - Install PyMT, create metadata files, register WrfHydroBmi in PyMT model registry, write documentation
@@ -105,10 +105,10 @@ Plans:
   1. All 6 conda packages (babelizer, meson-python, meson, ninja, cython, python-build) are installed and importable
   2. `babel.toml` exists with correct naming chain (`library = "bmiwrfhydrof"`, `entry_point = "bmi_wrf_hydro"`, `package.name = "pymt_wrfhydro"`) and `mpi4py` in requirements
   3. `pymt_wrfhydro/` directory exists with all auto-generated files (bmi_interoperability.f90, .pyx, meson.build, pyproject.toml)
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
-- [ ] 06-01-PLAN.md — Install babelizer toolchain, write babel.toml, generate pymt_wrfhydro skeleton, verify naming chain
+- [x] 06-01-PLAN.md — Install babelizer toolchain, write babel.toml, generate pymt_wrfhydro skeleton, verify naming chain
 
 ### Phase 7: Package Build
 **Goal**: pymt_wrfhydro is built, installed, and importable from Python, with the full initialize/update/finalize cycle working end-to-end against Croton NY data
@@ -165,7 +165,7 @@ Phases execute in numeric order: 5 -> 6 -> 7 -> 8 -> 9
 | 3. Python Validation | v1.0 | 2/2 | Complete | 2026-02-24 |
 | 4. Documentation | v1.0 | 1/1 | Complete | 2026-02-24 |
 | 5. Library Hardening | v2.0 | 2/2 | Complete | 2026-02-25 |
-| 6. Babelizer Environment + Skeleton | v2.0 | 0/? | Not started | - |
+| 6. Babelizer Environment + Skeleton | v2.0 | 1/1 | Complete | 2026-02-25 |
 | 7. Package Build | v2.0 | 0/? | Not started | - |
 | 8. BMI Compliance Validation | v2.0 | 0/? | Not started | - |
 | 9. PyMT Integration | v2.0 | 0/? | Not started | - |
