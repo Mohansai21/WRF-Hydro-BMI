@@ -22,9 +22,9 @@ Requirements for the babelizer milestone. Each maps to roadmap phases.
 
 ### Package Build
 
-- [ ] **BUILD-01**: `pip install --no-build-isolation .` completes successfully inside `pymt_wrfhydro/`
-- [ ] **BUILD-02**: `from pymt_wrfhydro import WrfHydroBmi` imports without error in Python
-- [ ] **BUILD-03**: MPI compatibility handled (mpi4py import before pymt_wrfhydro loads libmpi with RTLD_GLOBAL)
+- [x] **BUILD-01**: `pip install --no-build-isolation .` completes successfully inside `pymt_wrfhydro/`
+- [x] **BUILD-02**: `from pymt_wrfhydro import WrfHydroBmi` imports without error in Python
+- [x] **BUILD-03**: MPI compatibility handled (mpi4py import before pymt_wrfhydro loads libmpi with RTLD_GLOBAL)
 - [ ] **BUILD-04**: Initialize/update/finalize cycle works end-to-end from Python with Croton NY data
 
 ### BMI Validation
@@ -86,9 +86,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ENV-01 | Phase 6 | Complete |
 | ENV-02 | Phase 6 | Complete |
 | ENV-03 | Phase 6 | Complete |
-| BUILD-01 | Phase 7 | Pending |
-| BUILD-02 | Phase 7 | Pending |
-| BUILD-03 | Phase 7 | Pending |
+| BUILD-01 | Phase 7 | Complete |
+| BUILD-02 | Phase 7 | Complete |
+| BUILD-03 | Phase 7 | Complete |
 | BUILD-04 | Phase 7 | Pending |
 | VAL-01 | Phase 8 | Pending |
 | VAL-02 | Phase 8 | Pending |
