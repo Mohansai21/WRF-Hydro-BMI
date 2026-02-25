@@ -9,10 +9,10 @@ Requirements for the babelizer milestone. Each maps to roadmap phases.
 
 ### Library Hardening
 
-- [ ] **LIB-01**: `libbmiwrfhydrof.so` rebuilt WITHOUT `bmi_wrf_hydro_c.o` to remove conflicting C binding symbols (`nm -D` shows no `bmi_` exports)
-- [ ] **LIB-02**: Both `.mod` files (`bmiwrfhydrof.mod` + `wrfhydro_bmi_state_mod.mod`) verified installed in `$CONDA_PREFIX/include/`
-- [ ] **LIB-03**: `pkg-config --cflags --libs bmiwrfhydrof` returns correct flags after rebuild
-- [ ] **LIB-04**: Existing 151-test Fortran suite still passes against rebuilt `.so` (no regression)
+- [x] **LIB-01**: `libbmiwrfhydrof.so` rebuilt WITHOUT `bmi_wrf_hydro_c.o` to remove conflicting C binding symbols (`nm -D` shows no `bmi_` exports)
+- [x] **LIB-02**: Both `.mod` files (`bmiwrfhydrof.mod` + `wrfhydro_bmi_state_mod.mod`) verified installed in `$CONDA_PREFIX/include/`
+- [x] **LIB-03**: `pkg-config --cflags --libs bmiwrfhydrof` returns correct flags after rebuild
+- [x] **LIB-04**: Existing 151-test Fortran suite still passes against rebuilt `.so` (no regression)
 
 ### Environment & Configuration
 
@@ -79,10 +79,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LIB-01 | Phase 5 | Pending |
-| LIB-02 | Phase 5 | Pending |
-| LIB-03 | Phase 5 | Pending |
-| LIB-04 | Phase 5 | Pending |
+| LIB-01 | Phase 5 | Complete |
+| LIB-02 | Phase 5 | Complete |
+| LIB-03 | Phase 5 | Complete |
+| LIB-04 | Phase 5 | Complete |
 | ENV-01 | Phase 6 | Pending |
 | ENV-02 | Phase 6 | Pending |
 | ENV-03 | Phase 6 | Pending |
