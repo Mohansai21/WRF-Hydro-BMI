@@ -456,6 +456,23 @@ contains
        ! HYDRO_ini (called inside land_driver_ini) redirects stdout
        ! (unit 6) to file "diag_hydro.00000" via open_print_mpp(6).
        ! After that redirect, print * goes to file, not terminal.
+
+       ! --- MPI communicator fix for external init (Python/mpi4py) ---
+       ! When MPI is already initialized by an external caller (e.g., mpi4py),
+       ! WRF-Hydro's MPP_LAND_INIT skips MPI_Comm_dup, leaving HYDRO_COMM_WORLD
+       ! as MPI_COMM_NULL. We must set it here before any WRF-Hydro code runs.
+       block
+          use mpi
+          use MODULE_CPL_LAND, only: HYDRO_COMM_WORLD
+          integer :: mpi_ierr
+          logical :: mpi_is_init
+          call MPI_Initialized(mpi_is_init, mpi_ierr)
+          if (mpi_is_init .and. HYDRO_COMM_WORLD == MPI_COMM_NULL) then
+             call MPI_Comm_dup(MPI_COMM_WORLD, HYDRO_COMM_WORLD, mpi_ierr)
+             write(0,*) "[BMI] Set HYDRO_COMM_WORLD from pre-initialized MPI"
+          end if
+       end block
+
        write(0,*) "[BMI] Calling orchestrator%init()..."
        call orchestrator%init()
        write(0,*) "[BMI] Calling land_driver_ini()..."
