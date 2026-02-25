@@ -1,8 +1,10 @@
-# 🔧 Doc 16: Shared Library, Python C Binding & Babelizer Readiness -- Complete Guide
+# 🔧 Doc 16: Shared Library & Babelizer Readiness -- Complete Guide
 
 > **From Fortran to Python in 5 layers** -- This guide covers how we turned the WRF-Hydro BMI wrapper
-> (bmi_wrf_hydro.f90) into a shared library (libbmiwrfhydrof.so) callable from Python, and what's
-> needed for the babelizer to auto-generate the full Python binding.
+> (bmi_wrf_hydro.f90) into a shared library (libbmiwrfhydrof.so) ready for the CSDMS babelizer to
+> auto-generate the full Python binding (`pymt_wrfhydro`).
+>
+> **Phase 5 Update (Feb 2026):** The hand-written C binding layer (`bmi_wrf_hydro_c.f90`) and Python ctypes tests were **removed** in Phase 5. The babelizer auto-generates its own C interop layer (`bmi_interoperability.f90`), making our hand-written C bindings redundant and harmful (duplicate symbol conflicts). Sections 5-7 are retained as **historical reference** only.
 
 ---
 
@@ -12,9 +14,9 @@
 - [Section 2: 🏗️ Architecture Overview](#section-2-️-architecture-overview)
 - [Section 3: 🔨 Phase 1 -- fPIC Foundation](#section-3--phase-1----fpic-foundation)
 - [Section 4: 📦 Phase 2 -- Shared Library Build](#section-4--phase-2----shared-library-build)
-- [Section 5: 🔗 Phase 3 -- Minimal C Binding Layer](#section-5--phase-3----minimal-c-binding-layer)
-- [Section 6: 🐍 Python ctypes Usage](#section-6--python-ctypes-usage)
-- [Section 7: 🧪 Python Test Suite](#section-7--python-test-suite)
+- [Section 5: 🔗 Phase 3 -- Minimal C Binding Layer (HISTORICAL)](#section-5--phase-3----minimal-c-binding-layer-historical)
+- [Section 6: 🐍 Python ctypes Usage (HISTORICAL)](#section-6--python-ctypes-usage-historical)
+- [Section 7: 🧪 Python Test Suite (HISTORICAL)](#section-7--python-test-suite-historical)
 - [Section 8: 🔍 Key Technical Decisions](#section-8--key-technical-decisions)
 - [Section 9: 🚀 Babelizer Readiness](#section-9--babelizer-readiness)
 - [Section 10: ⚔️ SCHISM Comparison -- Two Paths to Python](#section-10-️-schism-comparison----two-paths-to-python)
@@ -39,7 +41,7 @@ This was accomplished across 4 phases:
 |-------|------|------------|
 | Phase 1 | 🔨 fPIC Foundation | 22 WRF-Hydro static libs rebuilt with `-fPIC` |
 | Phase 2 | 📦 Shared Library Build | `libbmiwrfhydrof.so` via CMake + `build.sh --shared` |
-| Phase 3 | 🔗 C Binding + Python Tests | 10 `bind(C)` functions + 8 pytest tests |
+| Phase 3 | ~~🔗 C Binding + Python Tests~~ | ~~10 `bind(C)` functions + 8 pytest tests~~ **(Removed in Phase 5 -- babelizer generates its own)** |
 | Phase 4 | 📄 Documentation | This doc (Doc 16) |
 
 ### 1.2 Where We Are in the 5-Layer Architecture
@@ -58,7 +60,7 @@ The WRF-Hydro BMI project follows a 5-layer architecture. This document covers *
 │  ┌─────────────────────────────────────────┐        │
 │  │ libbmiwrfhydrof.so                      │        │
 │  │  ├── bmi_wrf_hydro.f90 (BMI wrapper)    │        │
-│  │  ├── bmi_wrf_hydro_c.f90 (C bindings)   │        │
+│  │  ├── hydro_stop_shim.f90 (linker shim)  │        │
 │  │  └── 22 WRF-Hydro static libs (baked in)│        │
 │  └─────────────────────────────────────────┘        │
 ├─────────────────────────────────────────────────────┤
@@ -105,11 +107,11 @@ Before reading this doc, you should be familiar with:
 `libbmiwrfhydrof.so` is a single file that contains **everything** needed to run WRF-Hydro through the BMI interface:
 
 ```
-libbmiwrfhydrof.so (4.9 MB)
+libbmiwrfhydrof.so (4.8 MB)
 ├── bmi_wrf_hydro.f90      BMI wrapper: 41 functions, CSDMS names, grid mapping
-├── bmi_wrf_hydro_c.f90    C binding: 10 bind(C) functions for ctypes/testing
 ├── hydro_stop_shim.f90    Linker shim: resolves bare external symbol
 └── 22 WRF-Hydro .a libs   Entire model: Noah-MP, routing, channel, I/O
+    (Note: bmi_wrf_hydro_c.f90 was removed in Phase 5 -- babelizer generates its own C interop)
     ├── libhydro_routing.a
     ├── libnoahmp_util.a
     ├── libhydro_mpp.a
@@ -140,14 +142,14 @@ Static libraries (`.a`) require the consumer to recompile and relink. Shared lib
 | File | Lines | Purpose | Phase Created |
 |------|-------|---------|---------------|
 | `bmi_wrf_hydro.f90` | 1,919 | Main BMI wrapper (41 functions) | Pre-existing |
-| `bmi_wrf_hydro_c.f90` | 335 | C binding layer (10 functions) | Phase 3 |
+| ~~`bmi_wrf_hydro_c.f90`~~ | ~~335~~ | ~~C binding layer (10 functions)~~ **REMOVED Phase 5** | ~~Phase 3~~ |
 | `hydro_stop_shim.f90` | 28 | Linker symbol resolver | Phase 2 |
 | `CMakeLists.txt` | 447 | CMake build configuration | Phase 2 |
 | `bmiwrfhydrof.pc.cmake` | 11 | pkg-config template | Phase 2 |
 | `rebuild_fpic.sh` | ~80 | Rebuild WRF-Hydro with -fPIC | Phase 1 |
-| `build.sh` (updated) | ~250 | Dev builds with --fpic/--shared | Phase 1-2 |
-| `conftest.py` | 181 | Pytest fixtures | Phase 3 |
-| `test_bmi_python.py` | 312 | Python test suite (8 tests) | Phase 3 |
+| `build.sh` (updated) | ~250 | Dev builds with --fpic/--shared + auto-install | Phase 1-2, updated Phase 5 |
+| ~~`conftest.py`~~ | ~~181~~ | ~~Pytest fixtures~~ **REMOVED Phase 5** | ~~Phase 3~~ |
+| ~~`test_bmi_python.py`~~ | ~~312~~ | ~~Python test suite (8 tests)~~ **REMOVED Phase 5** | ~~Phase 3~~ |
 
 ### 2.4 Build Pipeline Flow
 
@@ -262,7 +264,7 @@ The `--shared` flag in `build.sh` builds the shared library directly with gfortr
 
 Internally, `--shared` auto-implies `--fpic` (uses `build_fpic/` libraries) and performs these steps:
 
-1. **Compile** BMI wrapper + C bindings + shim with `-fPIC`
+1. **Compile** BMI wrapper + shim with `-fPIC`
 2. **Recompile** two WRF-Hydro driver `.F` files with explicit `-fPIC` (see Section 4.3 below)
 3. **Link** everything into `libbmiwrfhydrof.so` via `gfortran -shared` with `--whole-archive`
 4. **Link** test executables against the `.so` using `-rpath`
@@ -332,7 +334,7 @@ WRF-Hydro's `module_NoahMP_hrldas_driver.F` and `module_hrldas_netcdf_io.F` are 
 ```cmake
 add_library(${bmi_name} SHARED
   src/bmi_wrf_hydro.f90           # Our BMI wrapper
-  src/bmi_wrf_hydro_c.f90         # Our C bindings
+  # (bmi_wrf_hydro_c.f90 was here -- removed in Phase 5)
   src/hydro_stop_shim.f90         # Our linker shim
   ${WRF_IO_SRC_DIR}/module_NoahMP_hrldas_driver.F    # Recompiled with -fPIC
   ${WRF_IO_SRC_DIR}/module_hrldas_netcdf_io.F        # Recompiled with -fPIC
@@ -414,31 +416,35 @@ pkg-config --cflags bmiwrfhydrof
 
 ---
 
-## Section 5: 🔗 Phase 3 -- Minimal C Binding Layer
+## Section 5: 🔗 Phase 3 -- Minimal C Binding Layer (HISTORICAL)
+
+> **⚠️ HISTORICAL NOTE (Phase 5, Feb 2026):** The C binding layer (`bmi_wrf_hydro_c.f90`), Python ctypes tests (`test_bmi_python.py`), and pytest fixtures (`conftest.py`) were **deleted** in Phase 5 of the v2.0 Babelizer milestone. The babelizer auto-generates its own C interop layer (`bmi_interoperability.f90`, 818 lines, 41+ bind(C) functions), making our hand-written 10-function C binding layer redundant. Worse, having both would create **duplicate symbol conflicts** at link time. This section is preserved as historical reference for understanding the design evolution.
 
 ### 5.1 Why Minimal? (The Babelizer Insight)
 
-The BMI spec has 41 functions. Our C binding layer wraps only **10** of them. Why?
+The BMI spec has 41 functions. Our C binding layer wrapped only **10** of them. Why?
 
-Because the **babelizer auto-generates** a complete 818-line `bmi_interoperability.f90` file with full ISO_C_BINDING wrappers for all 41 BMI functions. Our C bindings are **test infrastructure** -- they exist to validate that `libbmiwrfhydrof.so` works from Python **before** we run the babelizer.
+Because the **babelizer auto-generates** a complete 818-line `bmi_interoperability.f90` file with full ISO_C_BINDING wrappers for all 41 BMI functions. Our C bindings were **test infrastructure** -- they existed to validate that `libbmiwrfhydrof.so` worked from Python **before** running the babelizer. Once the babelizer pathway was ready (Phase 5+), keeping them would cause duplicate `bmi_*` symbol conflicts.
 
 ```
 ┌──────────────────────────────┐    ┌──────────────────────────────┐
-│  OUR C BINDINGS              │    │  BABELIZER'S INTEROP LAYER   │
+│  OUR C BINDINGS (REMOVED)    │    │  BABELIZER'S INTEROP LAYER   │
 │  (bmi_wrf_hydro_c.f90)      │    │  (bmi_interoperability.f90)  │
 │                              │    │                              │
 │  10 functions                │    │  41+ functions               │
 │  335 lines                   │    │  818 lines                   │
 │  Test infrastructure         │    │  Production code             │
-│  Validates .so works         │    │  Full Python binding         │
+│  DELETED in Phase 5          │    │  Full Python binding         │
 │  Written by us               │    │  Auto-generated              │
 └──────────────────────────────┘    └──────────────────────────────┘
-         ↑ We wrote this                    ↑ Babelizer writes this
+         ↑ Removed (conflicts)              ↑ Babelizer writes this
 ```
 
-> 🤖 **ML Analogy:** Our C bindings are like a **quick smoke test** you run on a model before deploying it to production. The babelizer's interop layer is the **full inference API** with all endpoints, error handling, and serialization. You don't write the production API by hand if a framework can generate it.
+> 🤖 **ML Analogy:** Our C bindings were like a **quick smoke test** you run on a model before deploying it to production. The babelizer's interop layer is the **full inference API** with all endpoints, error handling, and serialization. You don't write the production API by hand if a framework can generate it -- and keeping both causes import conflicts (like having two `__init__.py` files defining the same class).
 
-### 5.2 The Singleton Pattern
+### 5.2 The Singleton Pattern (Historical)
+
+> **⚠️ Historical:** This code was in the now-deleted `bmi_wrf_hydro_c.f90`. The babelizer generates its own singleton management in `bmi_interoperability.f90`.
 
 WRF-Hydro cannot support multiple instances. Its module-level globals (arrays like `COSZEN`, `SMOIS`, etc.) are allocated once during initialization and cannot be re-allocated without modifying WRF-Hydro source code. This means:
 
@@ -478,9 +484,9 @@ SCHISM (LynkerIntel's `bmischism.f90`) uses a `register_bmi` function that alloc
 
 We don't need the box pattern because our target is **PyMT/babelizer**, which works with module-level singletons.
 
-### 5.3 The 10 bind(C) Functions
+### 5.3 The 10 bind(C) Functions (Historical -- Removed in Phase 5)
 
-All 10 functions are exposed as flat C symbols callable from Python `ctypes`:
+These 10 functions **were** exposed as flat C symbols callable from Python `ctypes` (now deleted):
 
 | # | C Symbol Name | Fortran BMI Equivalent | Parameters | Return |
 |---|---------------|----------------------|------------|--------|
@@ -557,11 +563,13 @@ end subroutine f_to_c_string
 
 ---
 
-## Section 6: 🐍 Python ctypes Usage
+## Section 6: 🐍 Python ctypes Usage (HISTORICAL)
 
-### 6.1 Loading the Shared Library
+> **⚠️ HISTORICAL NOTE (Phase 5, Feb 2026):** The hand-written C binding symbols (`bmi_initialize`, `bmi_update`, etc.) that this section referenced were **removed** in Phase 5. The babelizer generates its own Python bindings via `bmi_interoperability.f90`. This section is preserved as reference for how ctypes/FFI interaction with Fortran shared libraries works in general.
 
-Loading `libbmiwrfhydrof.so` from Python requires three steps:
+### 6.1 Loading the Shared Library (Historical)
+
+Loading `libbmiwrfhydrof.so` from Python via ctypes required three steps (before Phase 5 removal):
 
 ```python
 import ctypes
@@ -636,15 +644,17 @@ With `RTLD_GLOBAL`, MPI symbols are visible globally:
 
 ### 6.3 Data Flow: Python to Fortran
 
-When a Python script calls `bmi_get_value_double`, the call travels through four layers:
+> **⚠️ Updated for Phase 5:** With the babelizer pathway, the data flow uses auto-generated `bmi_interoperability.f90` instead of our deleted `bmi_wrf_hydro_c.f90`.
+
+When the babelizer-generated Python class calls a BMI function, the call travels through four layers:
 
 ```
-Python: lib.bmi_get_value_double(b"channel_water__volume_flow_rate", arr_ptr)
+Python: model.get_value("channel_water__volume_flow_rate", dest_array)
   │
-  ▼ ctypes FFI (Foreign Function Interface)
-C ABI: bmi_get_value_double(name, dest) in libbmiwrfhydrof.so
+  ▼ Babelizer-generated Python class (_wrfhydro.py)
+C ABI: bmi_get_value_double(name, dest) via bmi_interoperability.f90 (auto-generated)
   │
-  ▼ bind(C) wrapper (bmi_wrf_hydro_c.f90)
+  ▼ bind(C) wrapper (bmi_interoperability.f90 -- babelizer-generated, NOT hand-written)
 Fortran: the_model%get_value_double("channel_water__volume_flow_rate", dest_array)
   │
   ▼ BMI wrapper (bmi_wrf_hydro.f90)
@@ -685,11 +695,13 @@ print(f"Active channels: {np.sum(values > 0)}")
 
 ---
 
-## Section 7: 🧪 Python Test Suite
+## Section 7: 🧪 Python Test Suite (HISTORICAL)
 
-### 7.1 Test Architecture
+> **⚠️ HISTORICAL NOTE (Phase 5, Feb 2026):** The Python test suite (`test_bmi_python.py`, 312 lines, 8 tests) and its fixtures (`conftest.py`, 181 lines) were **deleted** in Phase 5 along with the C binding layer they tested. The Fortran test suite (151 tests) remains the primary validation mechanism. After babelization, the babelizer-generated Python package will have its own test infrastructure.
 
-The Python test suite uses **session-scoped** pytest fixtures because WRF-Hydro is a singleton -- it cannot be re-initialized within the same process. All 8 tests share a single BMI session:
+### 7.1 Test Architecture (Historical)
+
+The Python test suite used **session-scoped** pytest fixtures because WRF-Hydro is a singleton -- it cannot be re-initialized within the same process. All 8 tests shared a single BMI session:
 
 ```
 Fixture Dependency Chain:
@@ -769,15 +781,15 @@ This section consolidates all key decisions made across Phases 1-3 into a decisi
 | # | Decision | Alternatives Considered | Rationale | Where in Code |
 |---|----------|------------------------|-----------|---------------|
 | 1 | Library named `bmiwrfhydrof` | `wrfhydro_bmi`, `wrf_hydro_bmi` | bmi-example-fortran convention (`bmi{model}f`), babelizer expects this | `CMakeLists.txt` line 70, `set(bmi_name bmiwrfhydrof)` |
-| 2 | Minimal C bindings (10 not 41) | Full 41-function C binding layer | Babelizer auto-generates full 818-line interop layer; our bindings are test-only | `bmi_wrf_hydro_c.f90` (entire file) |
-| 3 | Singleton pattern | Box/opaque-handle (SCHISM's approach) | WRF-Hydro can't multi-instance (module globals); box pattern is for NextGen | `bmi_wrf_hydro_c.f90` lines 61-67 |
+| 2 | ~~Minimal C bindings (10 not 41)~~ **REMOVED Phase 5** | Full 41-function C binding layer | Babelizer auto-generates full 818-line interop layer; our hand-written bindings caused duplicate symbol conflicts | ~~`bmi_wrf_hydro_c.f90`~~ (deleted) |
+| 3 | Singleton pattern | Box/opaque-handle (SCHISM's approach) | WRF-Hydro can't multi-instance (module globals); box pattern is for NextGen | Babelizer handles singleton via its generated interop layer |
 | 4 | `gfortran -shared` (not `mpif90`) | `mpif90 -shared` | mpif90 wrapper can strip `--whole-archive` flags | `build.sh` shared library link step |
 | 5 | Recompile `.F` sources in CMake | Link pre-built `.o` files from `build_fpic/` | `CMAKE_POSITION_INDEPENDENT_CODE` only applies to library targets (-fPIC), not executable targets (-fPIE) | `CMakeLists.txt` lines 274-280 |
 | 6 | `--whole-archive` linking | Selective linking (`--start-group`) | All symbols must be available in .so for downstream consumers | `CMakeLists.txt` lines 301-309 |
 | 7 | `hydro_stop_shim.f90` | Modify WRF-Hydro source (rejected: non-invasive rule) | Bare external `hydro_stop_` from dead code exposed by --whole-archive | `src/hydro_stop_shim.f90` (28 lines) |
-| 8 | `RTLD_GLOBAL` for MPI preload | `mpi4py` import, `LD_PRELOAD` env var | Simplest approach, works with ctypes, no extra dependency | `conftest.py` line 53 |
-| 9 | Session-scoped pytest | Per-test BMI lifecycle | WRF-Hydro singleton prevents re-init; all tests share one session | `conftest.py` line 139 |
-| 10 | `-1e-6` streamflow tolerance | Strict `>= 0.0` | `REAL` to `double` conversion introduces ~-2e-11 noise | `test_bmi_python.py` line 296 |
+| 8 | ~~`RTLD_GLOBAL` for MPI preload~~ **REMOVED Phase 5** | `mpi4py` import, `LD_PRELOAD` env var | Was simplest approach for ctypes; no longer needed (babelizer handles MPI) | ~~`conftest.py`~~ (deleted) |
+| 9 | ~~Session-scoped pytest~~ **REMOVED Phase 5** | Per-test BMI lifecycle | Was needed for WRF-Hydro singleton; Python ctypes tests deleted | ~~`conftest.py`~~ (deleted) |
+| 10 | ~~`-1e-6` streamflow tolerance~~ **REMOVED Phase 5** | Strict `>= 0.0` | `REAL` to `double` conversion noise; Python ctypes test deleted | ~~`test_bmi_python.py`~~ (deleted) |
 
 > 🧠 **Key insight:** Decisions 1-3 are **architectural** (affect the babelizer pathway). Decisions 4-7 are **build system** workarounds (Linux/Fortran quirks). Decisions 8-10 are **testing** pragmatics (MPI + singleton constraints). Understanding why each decision was made helps when extending the system.
 
@@ -831,7 +843,7 @@ The Python package (`pymt_wrfhydro`) includes:
 - Build system (Meson) that uses `pkg-config --libs bmiwrfhydrof`
 - Installation scripts (`pip install .`)
 
-> 🧠 **Key insight:** Our 335-line C binding file (`bmi_wrf_hydro_c.f90`) with 10 functions exists **only for testing**. The babelizer's 818-line interop file with 41+ functions is the **production** C binding layer. We don't need to write the production layer ourselves.
+> 🧠 **Key insight (validated in Phase 5):** Our 335-line C binding file (`bmi_wrf_hydro_c.f90`) existed only for testing and was **removed in Phase 5** to avoid duplicate symbol conflicts with the babelizer's 818-line interop file. The babelizer's auto-generated interop file with 41+ functions is the **production** C binding layer. We don't need to write it ourselves -- and keeping both causes linker errors.
 
 ### 9.3 Conceptual babel.toml
 
@@ -887,10 +899,13 @@ ls $CONDA_PREFIX/include/bmiwrfhydrof.mod $CONDA_PREFIX/include/wrfhydro_bmi_sta
 # Expected: both files exist
 ```
 
-**5. BMI symbols exported:**
+**5. BMI Fortran module symbols exported (no conflicting C symbols):**
 ```bash
 nm -D $CONDA_PREFIX/lib/libbmiwrfhydrof.so | grep -c "T __bmiwrfhydrof_MOD_"
 # Expected: 62 (all BMI procedures from the wrapper module)
+
+nm -D $CONDA_PREFIX/lib/libbmiwrfhydrof.so | grep " T bmi_"
+# Expected: NO output (no C binding symbols -- babelizer will add its own)
 ```
 
 **6. No unresolved dependencies:**
@@ -921,7 +936,7 @@ If all 7 checks pass, the library is ready for `babelize init`.
 Our WRF-Hydro BMI wrapper follows the **CSDMS babelizer pathway**:
 
 - **Deliverables:** `.so + .pc + .mod` -- minimal set for babelizer
-- **C bindings:** Minimal (10 functions for pre-babelizer testing). Babelizer generates the full set.
+- **C bindings:** None in the library (removed in Phase 5). Babelizer auto-generates the full set.
 - **Instance pattern:** Singleton (module-level `the_model`). No box/opaque handle.
 - **Target framework:** PyMT (CSDMS Python Modeling Toolkit)
 - **End goal:** `pymt_wrfhydro` Python package for coupled simulations via PyMT
@@ -940,9 +955,9 @@ SCHISM (LynkerIntel's `bmischism.f90`) follows the **NOAA NextGen pathway**:
 
 | Aspect | WRF-Hydro (ours) | SCHISM (LynkerIntel) |
 |--------|-------------------|---------------------|
-| C binding file | `bmi_wrf_hydro_c.f90` (335 lines) | `bmischism.f90` (1,729 lines) |
-| C binding purpose | Test infrastructure | Production code |
-| Functions wrapped | 10 (for ctypes validation) | 41+ (all BMI + extras) |
+| C binding file | None (removed Phase 5; babelizer generates its own) | `bmischism.f90` (1,729 lines) |
+| C binding purpose | N/A (babelizer auto-generates) | Production code |
+| Functions wrapped | 0 in library (babelizer adds 41+) | 41+ (all BMI + extras) |
 | Instance pattern | Singleton (`the_model`) | Box/opaque-handle |
 | Target framework | PyMT/babelizer (CSDMS) | NOAA NextGen (ngen) |
 | Who writes full interop | Babelizer (auto-generated) | Developer (manual) |
@@ -959,7 +974,7 @@ The two approaches are both valid -- they target **different ecosystems**:
 ┌──────────────────────────────┐    ┌──────────────────────────────┐
 │  CSDMS / PyMT Ecosystem      │    │  NOAA NextGen Ecosystem      │
 │                              │    │                              │
-│  .so + .pc + .mod            │    │  Full C binding layer        │
+│  .so + .pc + .mod (no C sym) │    │  Full C binding layer        │
 │       │                      │    │       │                      │
 │       ▼                      │    │       ▼                      │
 │  babelizer (auto-generates)  │    │  ngen C adapter (manual)     │
@@ -998,9 +1013,9 @@ The two approaches are both valid -- they target **different ecosystems**:
 
 | File | Size | Contents |
 |------|------|----------|
-| `libbmiwrfhydrof.so` | 4.9 MB | BMI wrapper + C bindings + 22 WRF-Hydro static libs |
+| `libbmiwrfhydrof.so` | 4.8 MB | BMI wrapper + shim + 22 WRF-Hydro static libs (no C bindings since Phase 5) |
 | All 22 WRF-Hydro `.a` files | ~12 MB total | Before baking into .so |
-| `.mod` files (3 installed) | ~40 KB total | `bmiwrfhydrof.mod`, `wrfhydro_bmi_state_mod.mod`, `bmi_wrf_hydro_c_mod.mod` |
+| `.mod` files (2 installed) | ~30 KB total | `bmiwrfhydrof.mod`, `wrfhydro_bmi_state_mod.mod` |
 
 The shared library is smaller than the sum of static libraries because `--whole-archive` pulls in all object files but the linker still performs dead-code elimination on unreferenced sections within objects.
 
@@ -1019,7 +1034,7 @@ The ctypes overhead is **negligible** (nanoseconds per call) compared to WRF-Hyd
 |-------|-------|----------|----------|------------|
 | 1. fPIC Foundation | 1 | 6 min | 6 min | 22 fPIC `.a` libraries |
 | 2. Shared Library + Install | 2 | 17 min | 8.5 min | `libbmiwrfhydrof.so` + pkg-config |
-| 3. Python Validation | 2 | 9 min | 4.5 min | 10 C bindings + 8 pytest tests |
+| 3. Python Validation | 2 | 9 min | 4.5 min | ~~10 C bindings + 8 pytest tests~~ **(removed Phase 5)** |
 | 4. Documentation | 1 | TBD | TBD | Doc 16 (this document) |
 | **Total** | **6** | **32+ min** | **~6 min** | |
 
@@ -1198,13 +1213,12 @@ cmake --install _build
 bmi_wrf_hydro/
 ├── src/
 │   ├── bmi_wrf_hydro.f90           # Main BMI wrapper (1,919 lines, 41 functions)
-│   ├── bmi_wrf_hydro_c.f90         # C binding layer (335 lines, 10 bind(C) functions)
-│   └── hydro_stop_shim.f90         # Linker shim (28 lines)
+│   ├── hydro_stop_shim.f90         # Linker shim (28 lines)
+│   └── (bmi_wrf_hydro_c.f90 removed in Phase 5 -- babelizer generates its own C interop)
 ├── tests/
 │   ├── bmi_wrf_hydro_test.f90      # Fortran test suite (1,777 lines, 151 tests)
 │   ├── bmi_minimal_test.f90        # Quick smoke test (105 lines)
-│   ├── conftest.py                 # Pytest fixtures (181 lines)
-│   └── test_bmi_python.py          # Python test suite (312 lines, 8 tests)
+│   └── (conftest.py + test_bmi_python.py removed in Phase 5)
 ├── build/                          # Compiled artifacts (git-ignored)
 │   ├── libbmiwrfhydrof.so          # Shared library (4.9 MB)
 │   ├── *.o, *.mod                  # Object files and modules
@@ -1234,8 +1248,8 @@ $CONDA_PREFIX/
 │       └── bmiwrfhydrof.pc          # pkg-config file
 ├── include/
 │   ├── bmiwrfhydrof.mod             # BMI wrapper module
-│   ├── wrfhydro_bmi_state_mod.mod   # BMI state module
-│   └── bmi_wrf_hydro_c_mod.mod      # C binding module
+│   └── wrfhydro_bmi_state_mod.mod   # BMI state module
+│   (bmi_wrf_hydro_c_mod.mod removed in Phase 5)
 └── ...
 ```
 
@@ -1351,8 +1365,8 @@ for t in range(0, 72, 1):  # 72-hour forecast, hourly coupling
 |---------|-------------|----------|
 | `mpirun --oversubscribe -np 1 ./build/bmi_wrf_hydro_test` | 151 Fortran tests | ~2-3 min |
 | `mpirun --oversubscribe -np 1 ./build/bmi_minimal_test` | Quick smoke test | ~30 sec |
-| `python -m pytest tests/test_bmi_python.py -m smoke -v` | 6 Python smoke tests | ~8-9 sec |
-| `python -m pytest tests/test_bmi_python.py -v` | All 8 Python tests | ~17 sec |
+| ~~`python -m pytest tests/test_bmi_python.py -m smoke -v`~~ | ~~6 Python smoke tests~~ **(removed Phase 5)** | ~~~8-9 sec~~ |
+| ~~`python -m pytest tests/test_bmi_python.py -v`~~ | ~~All 8 Python tests~~ **(removed Phase 5)** | ~~~17 sec~~ |
 
 > 📌 **Note:** All test commands should be run from the `bmi_wrf_hydro/` directory after activating the conda environment.
 
@@ -1363,7 +1377,7 @@ for t in range(0, 72, 1):  # 72-hour forecast, hourly coupling
 | `pkg-config --libs bmiwrfhydrof` | pkg-config discovery | `-lbmiwrfhydrof -lbmif` |
 | `pkg-config --modversion bmiwrfhydrof` | Library version | `1.0.0` |
 | `ldd $CONDA_PREFIX/lib/libbmiwrfhydrof.so` | Runtime dependencies | No "not found" |
-| `nm -D $CONDA_PREFIX/lib/libbmiwrfhydrof.so \| grep bmi_` | C binding symbols | 10 `bmi_*` symbols |
+| `nm -D $CONDA_PREFIX/lib/libbmiwrfhydrof.so \| grep " T bmi_"` | No C binding symbols (Phase 5) | No output (zero `bmi_*` symbols) |
 | `nm -D $CONDA_PREFIX/lib/libbmiwrfhydrof.so \| grep -c "T __bmiwrfhydrof_MOD_"` | BMI module symbols | 62 |
 | `ls $CONDA_PREFIX/lib/libbmiwrfhydrof.so*` | Shared library files | .so, .so.1, .so.1.0.0 |
 | `ls $CONDA_PREFIX/include/bmiwrfhydrof.mod` | Module file | File exists |
@@ -1393,18 +1407,18 @@ Across 4 phases (6 plans, ~32 minutes of execution), we transformed the WRF-Hydr
 |-------|--------------|--------------|
 | Phase 1 | Rebuilt 22 WRF-Hydro static libraries with `-fPIC` | `rebuild_fpic.sh`, `build_fpic/lib/*.a` |
 | Phase 2 | Built shared library + CMake + pkg-config | `libbmiwrfhydrof.so`, `CMakeLists.txt`, `bmiwrfhydrof.pc` |
-| Phase 3 | Minimal C bindings + Python test suite | `bmi_wrf_hydro_c.f90`, `test_bmi_python.py` |
+| Phase 3 | ~~Minimal C bindings + Python test suite~~ **(removed Phase 5)** | ~~`bmi_wrf_hydro_c.f90`, `test_bmi_python.py`~~ (deleted) |
 | Phase 4 | Comprehensive documentation | Doc 16 (this document) |
 
 ### 16.2 The Three Key Insights
 
 > 🧠 **Insight 1:** The babelizer generates the C interop layer -- we just need the `.so + .pc`.
 >
-> Don't write 41 `bind(C)` wrappers by hand. The babelizer auto-generates an 818-line `bmi_interoperability.f90` with full ISO_C_BINDING for all BMI functions. Our job is to deliver a properly packaged shared library with pkg-config discovery.
+> Don't write 41 `bind(C)` wrappers by hand. The babelizer auto-generates an 818-line `bmi_interoperability.f90` with full ISO_C_BINDING for all BMI functions. Our job is to deliver a properly packaged shared library with pkg-config discovery. **Validated in Phase 5:** We removed our hand-written C bindings entirely.
 
-> 🧠 **Insight 2:** Minimal C bindings are test infrastructure, not production code.
+> 🧠 **Insight 2 (Updated Phase 5):** Hand-written C bindings must be **removed** before babelization, not just left dormant.
 >
-> Our 335-line `bmi_wrf_hydro_c.f90` with 10 functions exists to validate that the `.so` works from Python **before** running the babelizer. Once the babelizer generates the full binding, our C bindings become redundant (though they remain useful for debugging).
+> Our 335-line `bmi_wrf_hydro_c.f90` with 10 functions was deleted in Phase 5 because the babelizer's auto-generated `bmi_interoperability.f90` defines the same `bmi_*` C symbols. Having both causes duplicate symbol errors at link time. The lesson: test infrastructure that overlaps with production code must be cleaned up before the production tool runs.
 
 > 🧠 **Insight 3:** WRF-Hydro's singleton nature drives the architectural decisions.
 >
@@ -1414,14 +1428,15 @@ Across 4 phases (6 plans, ~32 minutes of execution), we transformed the WRF-Hydr
 
 With `libbmiwrfhydrof.so` built, tested from Python, and documented -- **the babelizer can take it from here.**
 
-The shared library is the gateway from Fortran to Python. It packages 1,919 lines of BMI wrapper code and 22 WRF-Hydro libraries into a single `.so` file that any Python script can load with `ctypes.CDLL`. Combined with the pkg-config file for build system discovery and `.mod` files for Fortran consumers, it provides everything the CSDMS ecosystem needs to integrate WRF-Hydro as a PyMT model.
+The shared library is the gateway from Fortran to Python. It packages 1,919 lines of BMI wrapper code and 22 WRF-Hydro libraries into a single `.so` file. Combined with the pkg-config file for build system discovery and `.mod` files for Fortran consumers, it provides everything the CSDMS babelizer needs to auto-generate the full Python binding (`pymt_wrfhydro`). The library exports only Fortran module symbols (no C binding symbols), leaving a clean namespace for the babelizer to populate.
 
 The next step: `babelize init babel.toml` to generate `pymt_wrfhydro` -- and then we're one step closer to that ~20-line Jupyter Notebook.
 
 ---
 
-*Doc 16 -- Shared Library, Python C Binding & Babelizer Readiness Complete Guide*
+*Doc 16 -- Shared Library & Babelizer Readiness Complete Guide*
 *Created: 2026-02-24*
-*Phase: Shared Library Milestone (Phases 1-4)*
+*Updated: 2026-02-25 (Phase 5: C binding layer removed, sections 5-7 marked historical)*
+*Phase: Shared Library Milestone (Phases 1-4) + Library Hardening (Phase 5)*
 *Author: WRF-Hydro BMI Project*
 
