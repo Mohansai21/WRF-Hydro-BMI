@@ -1,0 +1,28 @@
+[library.WrfHydroBmi]
+language = "fortran"
+library = "bmiwrfhydrof"
+header = ""
+entry_point = "bmi_wrf_hydro"
+
+[build]
+undef_macros = []
+define_macros = []
+libraries = []
+library_dirs = []
+include_dirs = []
+extra_compile_args = []
+
+[package]
+name = "pymt_wrfhydro"
+requirements = ["mpi4py", "netCDF4"]
+
+[info]
+github_username = "VT-Hydroinformatics"
+package_author = "Mohan Sai Movva"
+package_author_email = ""
+package_license = "MIT License"
+summary = "PyMT plugin for the WRF-Hydro hydrological model"
+
+[ci]
+python_version = ["3.10"]
+os = ["linux"]
