@@ -1,0 +1,231 @@
+[1m============================= test session starts ==============================[0m
+platform linux -- Python 3.10.19, pytest-9.0.2, pluggy-1.6.0 -- /home/mohansai/miniconda3/envs/wrfhydro-bmi/bin/python
+cachedir: .pytest_cache
+rootdir: /home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_bootstrap
+plugins: dependency-0.5.1
+[1mcollecting ... [0m[1mcollecting 4 items                                                             [0m[1mcollected 4 items                                                              [0m
+
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_bootstrap/control_test.py::test_has_initialize [32mPASSED[0m[32m [ 25%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_bootstrap/control_test.py::test_has_finalize [32mPASSED[0m[32m [ 50%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_bootstrap/control_test.py::test_initialize [33mSKIPPED[0m[32m [ 75%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_bootstrap/control_test.py::test_update [33mSKIPPED[0m[32m [100%][0m
+
+[32m========================= [32m[1m2 passed[0m, [33m2 skipped[0m[32m in 1.37s[0m[32m =========================[0m
+[1m============================= test session starts ==============================[0m
+platform linux -- Python 3.10.19, pytest-9.0.2, pluggy-1.6.0 -- /home/mohansai/miniconda3/envs/wrfhydro-bmi/bin/python
+cachedir: .pytest_cache
+rootdir: /home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests
+plugins: dependency-0.5.1
+[1mcollecting ... [0m[1mcollected 22 items                                                             [0m
+
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_1/info_test.py::test_get_component_name [32mPASSED[0m[32m [  4%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_1/info_test.py::test_var_names[land_surface_water__evaporation_volume_flux] [32mPASSED[0m[33m [  9%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_1/info_test.py::test_var_names[soil_water__domain_time_integral_of_baseflow_volume_flux] [32mPASSED[0m[33m [ 13%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_1/info_test.py::test_var_names[sea_water__x_velocity] [32mPASSED[0m[33m [ 18%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_1/info_test.py::test_var_names[land_surface_water__depth] [32mPASSED[0m[33m [ 22%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_1/info_test.py::test_var_names[land_surface_air__temperature] [32mPASSED[0m[33m [ 27%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_1/info_test.py::test_var_names[soil_water__volume_fraction] [32mPASSED[0m[33m [ 31%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_1/info_test.py::test_var_names[atmosphere_water__precipitation_leq-volume_flux] [32mPASSED[0m[33m [ 36%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_1/info_test.py::test_var_names[snowpack__liquid-equivalent_depth] [32mPASSED[0m[33m [ 40%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_1/info_test.py::test_var_names[sea_water_surface__elevation] [32mPASSED[0m[33m [ 45%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_1/info_test.py::test_var_names[land_surface_water__runoff_volume_flux] [32mPASSED[0m[33m [ 50%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_1/info_test.py::test_var_names[channel_water__volume_flow_rate] [32mPASSED[0m[33m [ 54%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_1/info_test.py::test_input_var_name_count [33mSKIPPED[0m[33m [ 59%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_1/info_test.py::test_output_var_name_count [33mSKIPPED[0m[33m [ 63%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_1/info_test.py::test_get_input_var_names [33mSKIPPED[0m[33m [ 68%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_1/info_test.py::test_get_output_var_names [33mSKIPPED[0m[33m [ 72%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_1/time_test.py::test_get_start_time [32mPASSED[0m[33m [ 77%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_1/time_test.py::test_get_time_step [32mPASSED[0m[33m [ 81%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_1/time_test.py::test_time_units_is_str [32mPASSED[0m[33m [ 86%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_1/time_test.py::test_time_units_is_valid [32mPASSED[0m[33m [ 90%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_1/time_test.py::test_get_current_time [33mSKIPPED[0m[33m [ 95%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_1/time_test.py::test_get_end_time [33mSKIPPED[0m[33m [100%][0m
+
+[33m=============================== warnings summary ===============================[0m
+stage_1/info_test.py::test_get_component_name
+  /home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/_pytest/python.py:170: PytestReturnNotNoneWarning: Test functions should return None, but stage_1/info_test.py::test_get_component_name returned <class 'str'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+[33m=================== [32m16 passed[0m, [33m[1m6 skipped[0m, [33m[1m1 warning[0m[33m in 0.08s[0m[33m ===================[0m
+[1m============================= test session starts ==============================[0m
+platform linux -- Python 3.10.19, pytest-9.0.2, pluggy-1.6.0 -- /home/mohansai/miniconda3/envs/wrfhydro-bmi/bin/python
+cachedir: .pytest_cache
+rootdir: /home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests
+plugins: dependency-0.5.1
+[1mcollecting ... [0m[1mcollected 66 items                                                             [0m
+
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_itemsize[land_surface_water__evaporation_volume_flux] [32mPASSED[0m[32m [  1%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_nbytes[land_surface_water__evaporation_volume_flux] [32mPASSED[0m[32m [  3%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_location[land_surface_water__evaporation_volume_flux] [32mPASSED[0m[32m [  4%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_var_on_grid[land_surface_water__evaporation_volume_flux] [32mPASSED[0m[32m [  6%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_type[land_surface_water__evaporation_volume_flux] [32mPASSED[0m[32m [  7%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_units[land_surface_water__evaporation_volume_flux] [32mPASSED[0m[32m [  9%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_itemsize[soil_water__domain_time_integral_of_baseflow_volume_flux] [32mPASSED[0m[32m [ 10%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_nbytes[soil_water__domain_time_integral_of_baseflow_volume_flux] [32mPASSED[0m[32m [ 12%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_location[soil_water__domain_time_integral_of_baseflow_volume_flux] [32mPASSED[0m[32m [ 13%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_var_on_grid[soil_water__domain_time_integral_of_baseflow_volume_flux] [32mPASSED[0m[32m [ 15%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_type[soil_water__domain_time_integral_of_baseflow_volume_flux] [32mPASSED[0m[32m [ 16%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_units[soil_water__domain_time_integral_of_baseflow_volume_flux] [32mPASSED[0m[32m [ 18%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_itemsize[sea_water__x_velocity] [32mPASSED[0m[32m [ 19%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_nbytes[sea_water__x_velocity] [32mPASSED[0m[32m [ 21%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_location[sea_water__x_velocity] [32mPASSED[0m[32m [ 22%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_var_on_grid[sea_water__x_velocity] [32mPASSED[0m[32m [ 24%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_type[sea_water__x_velocity] [32mPASSED[0m[32m [ 25%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_units[sea_water__x_velocity] [32mPASSED[0m[32m [ 27%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_itemsize[land_surface_water__depth] [32mPASSED[0m[32m [ 28%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_nbytes[land_surface_water__depth] [32mPASSED[0m[32m [ 30%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_location[land_surface_water__depth] [32mPASSED[0m[32m [ 31%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_var_on_grid[land_surface_water__depth] [32mPASSED[0m[32m [ 33%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_type[land_surface_water__depth] [32mPASSED[0m[32m [ 34%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_units[land_surface_water__depth] [32mPASSED[0m[32m [ 36%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_itemsize[land_surface_air__temperature] [32mPASSED[0m[32m [ 37%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_nbytes[land_surface_air__temperature] [32mPASSED[0m[32m [ 39%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_location[land_surface_air__temperature] [32mPASSED[0m[32m [ 40%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_var_on_grid[land_surface_air__temperature] [32mPASSED[0m[32m [ 42%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_type[land_surface_air__temperature] [32mPASSED[0m[32m [ 43%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_units[land_surface_air__temperature] [32mPASSED[0m[32m [ 45%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_itemsize[soil_water__volume_fraction] [32mPASSED[0m[32m [ 46%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_nbytes[soil_water__volume_fraction] [32mPASSED[0m[32m [ 48%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_location[soil_water__volume_fraction] [32mPASSED[0m[32m [ 50%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_var_on_grid[soil_water__volume_fraction] [32mPASSED[0m[32m [ 51%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_type[soil_water__volume_fraction] [32mPASSED[0m[32m [ 53%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_units[soil_water__volume_fraction] [32mPASSED[0m[32m [ 54%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_itemsize[atmosphere_water__precipitation_leq-volume_flux] [32mPASSED[0m[32m [ 56%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_nbytes[atmosphere_water__precipitation_leq-volume_flux] [32mPASSED[0m[32m [ 57%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_location[atmosphere_water__precipitation_leq-volume_flux] [32mPASSED[0m[32m [ 59%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_var_on_grid[atmosphere_water__precipitation_leq-volume_flux] [32mPASSED[0m[32m [ 60%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_type[atmosphere_water__precipitation_leq-volume_flux] [32mPASSED[0m[32m [ 62%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_units[atmosphere_water__precipitation_leq-volume_flux] [32mPASSED[0m[32m [ 63%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_itemsize[snowpack__liquid-equivalent_depth] [32mPASSED[0m[32m [ 65%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_nbytes[snowpack__liquid-equivalent_depth] [32mPASSED[0m[32m [ 66%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_location[snowpack__liquid-equivalent_depth] [32mPASSED[0m[32m [ 68%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_var_on_grid[snowpack__liquid-equivalent_depth] [32mPASSED[0m[32m [ 69%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_type[snowpack__liquid-equivalent_depth] [32mPASSED[0m[32m [ 71%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_units[snowpack__liquid-equivalent_depth] [32mPASSED[0m[32m [ 72%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_itemsize[sea_water_surface__elevation] [32mPASSED[0m[32m [ 74%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_nbytes[sea_water_surface__elevation] [32mPASSED[0m[32m [ 75%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_location[sea_water_surface__elevation] [32mPASSED[0m[32m [ 77%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_var_on_grid[sea_water_surface__elevation] [32mPASSED[0m[32m [ 78%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_type[sea_water_surface__elevation] [32mPASSED[0m[32m [ 80%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_units[sea_water_surface__elevation] [32mPASSED[0m[32m [ 81%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_itemsize[land_surface_water__runoff_volume_flux] [32mPASSED[0m[32m [ 83%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_nbytes[land_surface_water__runoff_volume_flux] [32mPASSED[0m[32m [ 84%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_location[land_surface_water__runoff_volume_flux] [32mPASSED[0m[32m [ 86%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_var_on_grid[land_surface_water__runoff_volume_flux] [32mPASSED[0m[32m [ 87%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_type[land_surface_water__runoff_volume_flux] [32mPASSED[0m[32m [ 89%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_units[land_surface_water__runoff_volume_flux] [32mPASSED[0m[32m [ 90%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_itemsize[channel_water__volume_flow_rate] [32mPASSED[0m[32m [ 92%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_nbytes[channel_water__volume_flow_rate] [32mPASSED[0m[32m [ 93%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_location[channel_water__volume_flow_rate] [32mPASSED[0m[32m [ 95%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_var_on_grid[channel_water__volume_flow_rate] [32mPASSED[0m[32m [ 96%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_type[channel_water__volume_flow_rate] [32mPASSED[0m[32m [ 98%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_2/var_test.py::test_get_var_units[channel_water__volume_flow_rate] [32mPASSED[0m[32m [100%][0m
+
+[32m============================== [32m[1m66 passed[0m[32m in 0.09s[0m[32m ==============================[0m
+[1m============================= test session starts ==============================[0m
+platform linux -- Python 3.10.19, pytest-9.0.2, pluggy-1.6.0 -- /home/mohansai/miniconda3/envs/wrfhydro-bmi/bin/python
+cachedir: .pytest_cache
+rootdir: /home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests
+plugins: dependency-0.5.1
+[1mcollecting ... [0m[1mcollected 67 items                                                             [0m
+
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_rank[0] [32mPASSED[0m[32m [  1%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_rank[1] [32mPASSED[0m[32m [  2%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_rank[2] [32mPASSED[0m[32m [  4%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_size[0] [32mPASSED[0m[32m [  5%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_size[1] [32mPASSED[0m[32m [  7%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_size[2] [32mPASSED[0m[32m [  8%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_type[0] [32mPASSED[0m[32m [ 10%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_type[1] [32mPASSED[0m[32m [ 11%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_type[2] [32mPASSED[0m[32m [ 13%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_node_count[0] [33mSKIPPED[0m[32m [ 14%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_node_count[1] [33mSKIPPED[0m[32m [ 16%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_node_count[2] [33mSKIPPED[0m[32m [ 17%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_edge_count[0] [33mSKIPPED[0m[32m [ 19%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_edge_count[1] [33mSKIPPED[0m[32m [ 20%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_edge_count[2] [33mSKIPPED[0m[32m [ 22%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_face_count[0] [33mSKIPPED[0m[32m [ 23%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_face_count[1] [33mSKIPPED[0m[32m [ 25%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_face_count[2] [33mSKIPPED[0m[32m [ 26%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_edge_nodes[0] [33mSKIPPED[0m[32m [ 28%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_edge_nodes[1] [33mSKIPPED[0m[32m [ 29%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_edge_nodes[2] [33mSKIPPED[0m[32m [ 31%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_edges_per_face[0] [33mSKIPPED[0m[32m [ 32%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_edges_per_face[1] [33mSKIPPED[0m[32m [ 34%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_edges_per_face[2] [33mSKIPPED[0m[32m [ 35%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_face_edges[0] [33mSKIPPED[0m[32m [ 37%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_face_edges[1] [33mSKIPPED[0m[32m [ 38%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_test.py::test_get_grid_face_edges[2] [33mSKIPPED[0m[32m [ 40%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_uniform_rectilinear_test.py::test_get_grid_shape[0] [32mPASSED[0m[32m [ 41%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_uniform_rectilinear_test.py::test_get_grid_shape[1] [32mPASSED[0m[32m [ 43%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_uniform_rectilinear_test.py::test_get_grid_shape[2] [33mSKIPPED[0m[32m [ 44%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_uniform_rectilinear_test.py::test_get_grid_spacing[0] [32mPASSED[0m[32m [ 46%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_uniform_rectilinear_test.py::test_get_grid_spacing[1] [32mPASSED[0m[32m [ 47%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_uniform_rectilinear_test.py::test_get_grid_spacing[2] [33mSKIPPED[0m[32m [ 49%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_uniform_rectilinear_test.py::test_get_grid_origin[0] [32mPASSED[0m[32m [ 50%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_uniform_rectilinear_test.py::test_get_grid_origin[1] [32mPASSED[0m[32m [ 52%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_uniform_rectilinear_test.py::test_get_grid_origin[2] [33mSKIPPED[0m[32m [ 53%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_unstructured_test.py::test_grid_x[0] [33mSKIPPED[0m[32m [ 55%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_unstructured_test.py::test_grid_x[1] [33mSKIPPED[0m[32m [ 56%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_unstructured_test.py::test_grid_x[2] [31mFAILED[0m[31m [ 58%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_unstructured_test.py::test_grid_y[0] [33mSKIPPED[0m[31m [ 59%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_unstructured_test.py::test_grid_y[1] [33mSKIPPED[0m[31m [ 61%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_unstructured_test.py::test_grid_y[2] [33mSKIPPED[0m[31m [ 62%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_unstructured_test.py::test_grid_z[0] [33mSKIPPED[0m[31m [ 64%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_unstructured_test.py::test_grid_z[1] [33mSKIPPED[0m[31m [ 65%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_unstructured_test.py::test_grid_z[2] [33mSKIPPED[0m[31m [ 67%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/value_test.py::test_get_var_location[land_surface_water__evaporation_volume_flux] [32mPASSED[0m[31m [ 68%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/value_test.py::test_get_var_location[soil_water__domain_time_integral_of_baseflow_volume_flux] [32mPASSED[0m[31m [ 70%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/value_test.py::test_get_var_location[sea_water__x_velocity] [32mPASSED[0m[31m [ 71%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/value_test.py::test_get_var_location[land_surface_water__depth] [32mPASSED[0m[31m [ 73%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/value_test.py::test_get_var_location[land_surface_air__temperature] [32mPASSED[0m[31m [ 74%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/value_test.py::test_get_var_location[soil_water__volume_fraction] [32mPASSED[0m[31m [ 76%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/value_test.py::test_get_var_location[atmosphere_water__precipitation_leq-volume_flux] [32mPASSED[0m[31m [ 77%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/value_test.py::test_get_var_location[snowpack__liquid-equivalent_depth] [32mPASSED[0m[31m [ 79%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/value_test.py::test_get_var_location[sea_water_surface__elevation] [32mPASSED[0m[31m [ 80%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/value_test.py::test_get_var_location[land_surface_water__runoff_volume_flux] [32mPASSED[0m[31m [ 82%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/value_test.py::test_get_var_location[channel_water__volume_flow_rate] [32mPASSED[0m[31m [ 83%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/value_test.py::test_set_input_values[atmosphere_water__precipitation_leq-volume_flux] [33mSKIPPED[0m[31m [ 85%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/value_test.py::test_set_input_values[sea_water_surface__elevation] [33mSKIPPED[0m[31m [ 86%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/value_test.py::test_set_input_values[sea_water__x_velocity] [33mSKIPPED[0m[31m [ 88%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/value_test.py::test_get_output_values[land_surface_water__evaporation_volume_flux] [32mPASSED[0m[31m [ 89%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/value_test.py::test_get_output_values[soil_water__domain_time_integral_of_baseflow_volume_flux] [32mPASSED[0m[31m [ 91%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/value_test.py::test_get_output_values[land_surface_water__depth] [32mPASSED[0m[31m [ 92%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/value_test.py::test_get_output_values[soil_water__volume_fraction] [32mPASSED[0m[31m [ 94%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/value_test.py::test_get_output_values[land_surface_air__temperature] [32mPASSED[0m[31m [ 95%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/value_test.py::test_get_output_values[snowpack__liquid-equivalent_depth] [32mPASSED[0m[31m [ 97%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/value_test.py::test_get_output_values[land_surface_water__runoff_volume_flux] [32mPASSED[0m[31m [ 98%][0m
+../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/value_test.py::test_get_output_values[channel_water__volume_flow_rate] [32mPASSED[0m[31m [100%][0m
+
+=================================== FAILURES ===================================
+[31m[1m________________________________ test_grid_x[2] ________________________________[0m
+
+initialized_bmi = <pymt_wrfhydro.lib.wrfhydrobmi.WrfHydroBmi object at 0x29e302a0>
+gid = 2
+
+    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_grid_x[39;49;00m(initialized_bmi, gid):[90m[39;49;00m
+        skip_if_grid_type_is(initialized_bmi, gid, [33m"[39;49;00m[33muniform_rectilinear[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
+    [90m[39;49;00m
+        gtype = initialized_bmi.get_grid_type(gid)[90m[39;49;00m
+        ndim = initialized_bmi.get_grid_rank(gid)[90m[39;49;00m
+        [94mif[39;49;00m ndim < [94m1[39;49;00m:[90m[39;49;00m
+            pytest.skip([33mf[39;49;00m[33m"[39;49;00m[33mgrid is rank [39;49;00m[33m{[39;49;00mndim[33m}[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
+    [90m[39;49;00m
+        [94mif[39;49;00m gtype == [33m"[39;49;00m[33munstructured[39;49;00m[33m"[39;49;00m:[90m[39;49;00m
+            size = initialized_bmi.get_grid_node_count(gid)[90m[39;49;00m
+        [94melif[39;49;00m gtype == [33m"[39;49;00m[33mrectilinear[39;49;00m[33m"[39;49;00m:[90m[39;49;00m
+            shape = np.empty(ndim, dtype=np.int32)[90m[39;49;00m
+            initialized_bmi.get_grid_shape(gid, shape)[90m[39;49;00m
+            size = shape[-[94m1[39;49;00m][90m[39;49;00m
+    [90m[39;49;00m
+>       x = np.full(size, np.nan)[90m[39;49;00m
+[1m[31mE       UnboundLocalError: local variable 'size' referenced before assignment[0m
+
+[1m[31m/home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_unstructured_test.py[0m:23: UnboundLocalError
+[36m[1m=========================== short test summary info ============================[0m
+[31mFAILED[0m ../../../../../../../../../../home/mohansai/miniconda3/envs/wrfhydro-bmi/lib/python3.10/site-packages/bmi_tester/_tests/stage_3/grid_unstructured_test.py::[1mtest_grid_x[2][0m - UnboundLocalError: local variable 'size' referenced before assignment
+[31m=================== [31m[1m1 failed[0m, [32m34 passed[0m, [33m32 skipped[0m[31m in 0.21s[0m[31m ===================[0m
+😞 There were errors
