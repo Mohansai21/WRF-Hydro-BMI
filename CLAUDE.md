@@ -21,11 +21,11 @@ a coupled WRF-Hydro + SCHISM compound flooding simulation via PyMT.
 - bmi-example-fortran/       -> CSDMS BMI heat example (BUILT & TESTED — 49/49 pass)
 - bmi-fortran/               -> BMI Fortran specification (abstract interface, bmif_2_0)
 - bmi_wrf_hydro/             -> OUR work directory (BMI wrapper)
-  - bmi_wrf_hydro/src/       -> BMI wrapper source (bmi_wrf_hydro.f90, 1,919 lines)
+  - bmi_wrf_hydro/src/       -> BMI wrapper source (bmi_wrf_hydro.f90 + hydro_stop_shim.f90)
   - bmi_wrf_hydro/tests/     -> Test programs (151-test suite + minimal test)
-  - bmi_wrf_hydro/build/     -> Compiled artifacts (.o, .mod, executables)
+  - bmi_wrf_hydro/build/     -> Compiled artifacts (.o, .mod, executables, libbmiwrfhydrof.so)
   - bmi_wrf_hydro/build.sh   -> Build script (compile + link against 22 WRF-Hydro libs)
-  - bmi_wrf_hydro/Docs/      -> 15 detailed project guide documents + Plan/
+  - bmi_wrf_hydro/Docs/      -> 17 detailed project guide documents + Plan/
 - SCHISM_BMI/                 -> LynkerIntel SCHISM BMI wrapper (bmi-integration-master branch)
 - WRF_Hydro_Run_Local/       -> WRF-Hydro standalone run setup (Croton NY test case)
 
@@ -41,9 +41,12 @@ a coupled WRF-Hydro + SCHISM compound flooding simulation via PyMT.
 
 ## Key Files to Know
 - bmi_wrf_hydro/src/bmi_wrf_hydro.f90        -> ★ OUR BMI WRAPPER (1,919 lines, 41 functions, 55 procedures)
+- bmi_wrf_hydro/src/hydro_stop_shim.f90      -> ★ HYDRO_finish shim (intercepts stop for clean finalize)
+# NOTE: bmi_wrf_hydro_c.f90 was removed in Phase 5 (C bindings conflict with babelizer's auto-generated interop layer)
 - bmi_wrf_hydro/tests/bmi_wrf_hydro_test.f90 -> ★ Full test suite (1,777 lines, 151 tests, ALL PASS)
 - bmi_wrf_hydro/tests/bmi_minimal_test.f90   -> ★ Quick smoke test (105 lines, init+6 updates+finalize)
 - bmi_wrf_hydro/build.sh                     -> ★ Build script (compile + link, handles 22 WRF-Hydro libs)
+- bmi_wrf_hydro/build/libbmiwrfhydrof.so     -> ★ SHARED LIBRARY (4.8 MB, installed to $CONDA_PREFIX/lib/)
 - bmi-fortran/bmi.f90                        -> Abstract BMI interface (564 lines, 53 deferred procedures)
 - bmi-example-fortran/bmi_heat/bmi_heat.f90  -> BMI wrapper TEMPLATE (935 lines) — OUR BLUEPRINT
 - bmi-example-fortran/build_and_test.sh      -> BMI heat example build+test script (all 49 tests)
@@ -115,10 +118,12 @@ Key WRF-Hydro subroutines (already identified):
 
 ## Compile Commands
 - Build BMI wrapper + all tests (from bmi_wrf_hydro/ directory):
-  ./build.sh              # Build everything
+  ./build.sh              # Build everything (static linking)
   ./build.sh minimal      # Build BMI + minimal test only
   ./build.sh full         # Build BMI + full test only
   ./build.sh clean        # Clean all artifacts
+  ./build.sh --fpic       # Build with fPIC WRF-Hydro libraries
+  ./build.sh --shared     # Build .so + tests linked against .so + auto-run tests
 - Run tests (from bmi_wrf_hydro/ directory):
   mpirun --oversubscribe -np 1 ./build/bmi_minimal_test     # Quick smoke test (~30s)
   mpirun --oversubscribe -np 1 ./build/bmi_wrf_hydro_test   # Full 151-test suite (~2-3min)
@@ -144,7 +149,7 @@ Layer 5: Scientist / Jupyter Notebook (~20 lines of Python)
 
 ## Project Roadmap (4 Phases)
 
-### Phase 1: Write BMI Wrapper for WRF-Hydro (MAIN WORK — COMPLETE)
+### Phase 1: Write BMI Wrapper for WRF-Hydro (COMPLETE)
 - [x] Study BMI examples, SCHISM BMI, documentation
 - [x] Build and run bmi-example-fortran (49/49 tests pass, build_and_test.sh)
 - [x] Install Fortran BMI bindings (bmi-fortran 2.0.3 in wrfhydro-bmi env)
@@ -158,9 +163,18 @@ Layer 5: Scientist / Jupyter Notebook (~20 lines of Python)
 - [x] Write bmi_wrf_hydro_test.f90 (151 tests, ~1780 lines)
 - [x] Build and link against WRF-Hydro libraries (build.sh)
 - [x] ALL 151 BMI TESTS PASS (Croton NY test case, 6-hour simulation)
-- [ ] Compile as shared library (libwrfhydro_bmi.so) ← NEXT
 
-### Phase 2: Babelize Both Models (mostly automated)
+### Phase 1.5: Shared Library Build (COMPLETE)
+- [x] Rebuild WRF-Hydro with -fPIC (build_fpic/ directory)
+- [x] ~~Write C binding layer (bmi_wrf_hydro_c.f90)~~ -> Removed in Phase 5 (babelizer generates its own)
+- [x] Write hydro_stop_shim.f90 (intercepts HYDRO_finish stop)
+- [x] Build libbmiwrfhydrof.so (4.8 MB, --whole-archive all 22 libs)
+- [x] Install to $CONDA_PREFIX/lib/ with versioned symlinks (1.0.0)
+- [x] Install .mod files to $CONDA_PREFIX/include/
+- [x] Tests pass linked against .so (both minimal + full 151-test suite)
+- [x] ~~C-callable symbols exported~~ -> Removed in Phase 5 (library exports Fortran module symbols only)
+
+### Phase 2: Babelize Both Models (NEXT — mostly automated)
 - [ ] Install babelizer (conda install babelizer)
 - [ ] Write babel.toml for WRF-Hydro
 - [ ] Run: babelize init babel.toml -> pymt_wrfhydro
@@ -201,27 +215,30 @@ make -j$(nproc)
 # Symlinks: wrf_hydro_NoahMP, wrf_hydro.exe
 ```
 
-## Current Status (Updated Feb 2026)
+## Current Status (Updated Feb 24, 2026)
 - BMI WRAPPER COMPLETE: bmi_wrf_hydro.f90 (~1900 lines) + test suite (151/151 pass)
+- SHARED LIBRARY COMPLETE: libbmiwrfhydrof.so (4.8 MB) built + installed to $CONDA_PREFIX/lib/
+- C BINDING LAYER REMOVED (Phase 5 -- babelizer generates its own C interop layer via bmi_interoperability.f90)
 - WRF-Hydro: v5.4.0 compiled, running Croton NY test case (6hr, 39 output files)
+- WRF-Hydro fPIC build: wrf_hydro_nwm_public/build_fpic/ (all 22 libs rebuilt with -fPIC)
 - BMI wrapper: initialize/update/finalize working, bit-for-bit match with standalone
 - BMI variables: 8 output + 4 input exposed via CSDMS Standard Names
 - BMI grids: 3 types (1km LSM, 250m routing, vector channel) all tested
-- Build script: bmi_wrf_hydro/build.sh (compile + link against 22 WRF-Hydro libs)
+- Build script: bmi_wrf_hydro/build.sh (static, --fpic, --shared modes; --shared auto-installs to $CONDA_PREFIX)
 - Run: mpirun --oversubscribe -np 1 ./build/bmi_wrf_hydro_test (from bmi_wrf_hydro/)
-- Directory reorganized: src/ (wrapper), tests/ (test programs), build/ (artifacts)
+- Directory reorganized: src/ (wrapper + shim), tests/ (Fortran test programs), build/ (artifacts + .so)
 - BMI Heat Example: Built and fully tested (49/49 CTest pass, build_and_test.sh works)
 - SCHISM: Full model in schism_NWM_BMI/ (uses #ifdef, no separate bmischism.f90)
 - bmi-fortran 2.0.3 installed in conda env, all BMI build deps verified
-- Master Plan created with 6 implementation phases
-- Phase 1 COMPLETE, NEXT = shared library (libwrfhydro_bmi.so) then Phase 2 (babelizer)
+- Phase 1 COMPLETE (BMI wrapper), Phase 1.5 COMPLETE (shared library), Phase 5 IN PROGRESS (library hardening)
+- NEXT = Phase 6 (babelizer environment + skeleton)
 - SCHISM BMI analysis: 1-way coupling ready (receive discharge), 2-way needs SCHISM additions
 - WRF-Hydro variable inventory: 154+ output vars, ~89 key, 22% have CSDMS names, 78% proposed
 - Weekly Reporting PPTs in bmi_wrf_hydro/Docs/Weekly Reporting/ (Feb 13, Feb 20)
-- Doc 10: SCHISM BMI complete guide — build, run, LynkerIntel wrapper, NextGen, PyMT status
-- Doc 11: SCHISM BMI deep dive — concepts only, 17 vars, 9 grids, t0/t1 pattern, NOAA usage, validation status
 - LynkerIntel/SCHISM_BMI added as git submodule (bmi-integration-master branch, bmischism.f90 = 1,729 lines)
 - SCHISM NOT in CSDMS/PyMT catalog — BMI built for NOAA NextGen, not PyMT pathway
+- GSD planning framework used for shared library milestone (.planning/ directory)
+- 17 documentation files in bmi_wrf_hydro/Docs/ (was 15, added Doc 16 + Doc 17)
 
 ## Key Design Decisions Made
 - Serial first (no MPI) — following SCHISM's approach
@@ -251,11 +268,23 @@ make -j$(nproc)
 13. SCHISM_And_Its_BMI_Complete_Deep_Dive — SCHISM model physics, unstructured mesh, semi-implicit method, BMI implementation, 12 input + 5 output vars, 9 grids, t0/t1 pattern, NextGen, repo links (MD + DOCX)
 14. WRF_Hydro_Model_Complete_Deep_Dive — WRF-Hydro physics (Noah-MP, overland, subsurface, channel, GW), equations, 3 grids, 80+ variables, RT_FIELD, NWM operations, architecture, build system, coupling
 15. BMI_WRF_Hydro_Build_Test_Complete_Guide — All BMI files explained, build system, test suite, VS Code setup, Croton NY data, troubleshooting, step-by-step commands
+16. Shared_Library_Python_Babelizer_Complete_Guide — Shared library architecture, fPIC, C bindings, babelizer workflow, PyMT integration (1,427 lines)
+17. WRFHydro_To_SCHISM_SourceSink_Coupling_Complete_Guide — Source/sink mechanism, pyschism NWM, Q_bnd variables, Delaware Region coupling, ath3 array
 Plan/BMI_Implementation_Master_Plan.md — 16-section detailed implementation plan (1,115 lines)
 
 ## Reference Docs (in WRF_Hydro_Run_Local/Docs/)
 2. Config_Files_Complete_Guide — namelist.hrldas, hydro.namelist, .TBL files explained
 3. VSCode_Settings_Guide — VS Code settings for Fortran/BMI development
+
+## Shared Library Details
+- Library: libbmiwrfhydrof.so (4.8 MB)
+- Location (build): bmi_wrf_hydro/build/libbmiwrfhydrof.so
+- Location (installed): $CONDA_PREFIX/lib/libbmiwrfhydrof.so -> libbmiwrfhydrof.so.1.0.0
+- Modules (installed): $CONDA_PREFIX/include/bmiwrfhydrof.mod, wrfhydro_bmi_state_mod.mod
+- Symbols exported: Fortran module symbols (__bmiwrfhydrof_MOD_*, 62 procedures)
+- No C binding symbols (bmi_wrf_hydro_c.f90 removed in Phase 5 -- babelizer generates its own)
+- Build: ./build.sh --shared (auto-builds .so + links tests + runs tests + auto-installs to $CONDA_PREFIX)
+- Depends on: WRF-Hydro fPIC libs (build_fpic/), libbmif.so, libnetcdff, MPI
 
 ## Scripts
 - bmi_wrf_hydro/build.sh — Build BMI wrapper + tests (compile + link 22 WRF-Hydro libs)
