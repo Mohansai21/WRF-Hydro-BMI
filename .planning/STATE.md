@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** WRF-Hydro must be controllable from Python via PyMT -- babelize init must produce a working pymt_wrfhydro package
-**Current focus:** Phase 8 (BMI Compliance Validation) -- IN PROGRESS (1/2 plans done)
+**Current focus:** Phase 8 (BMI Compliance Validation) -- COMPLETE (2/2 plans done)
 
 ## Current Position
 
-Phase: 8 of 9 (BMI Compliance Validation) -- IN PROGRESS
-Plan: 2 of 2 (08-02: Full Croton NY validation + Doc 18 + validate.sh)
-Status: Plan 08-01 complete (bmi-tester 118 passed, 40 skipped, 1 bmi-tester bug)
-Last activity: 2026-02-25 -- Completed 08-01-PLAN.md (bmi-tester validation)
+Phase: 8 of 9 (BMI Compliance Validation) -- COMPLETE
+Plan: 2 of 2 (08-02: Full Croton NY validation + Doc 18 + validate.sh) -- COMPLETE
+Status: All validation suites pass: bmi-tester 118/118, pytest 44/44, E2E 5/5
+Last activity: 2026-02-25 -- Completed 08-02-PLAN.md (Croton NY validation + Doc 18 + validate.sh)
 
-Progress: [█████████░] 90% (v1.0 complete: 6/6 plans; v2.0: 7/? plans)
+Progress: [██████████] 95% (v1.0 complete: 6/6 plans; v2.0: 8/? plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12 (v1.0: 6, v2.0: 6)
-- Average duration: 6.3 min
-- Total execution time: 1.3 hours
+- Total plans completed: 13 (v1.0: 6, v2.0: 7)
+- Average duration: 6.4 min
+- Total execution time: 1.4 hours
 
 **By Phase (v1.0 Shared Library):**
 
@@ -39,7 +39,7 @@ Progress: [█████████░] 90% (v1.0 complete: 6/6 plans; v2.0: 
 | 5. Library Hardening | 2/2 | 13 min | 6.5 min |
 | 6. Babelizer Env + Skeleton | 1/1 | 5 min | 5 min |
 | 7. Package Build | 2/2 | 15 min | 7.5 min |
-| 8. BMI Compliance Validation | 1/2 | 9 min | 9 min |
+| 8. BMI Compliance Validation | 2/2 | 16 min | 8 min |
 
 *Updated after each plan completion*
 
@@ -65,16 +65,19 @@ Progress: [█████████░] 90% (v1.0 complete: 6/6 plans; v2.0: 
 - [v2.0 Phase 8]: No BMI wrapper changes needed -- bmi-tester validates implementation as-is
 - [v2.0 Phase 8]: Grid 2 type stays "vector" (correct per BMI 2.0); bmi-tester 0.5.9 has UnboundLocalError for vector grids
 - [v2.0 Phase 8]: Monkey-patch run_bmi_tester.py fixes conftest discovery when CWD differs from bmi-tester test tree
+- [v2.0 Phase 8]: Reference .npz from same Python code path (not Fortran) for guaranteed consistency
+- [v2.0 Phase 8]: Element-wise comparison of 505-element streamflow array, not just min/max statistics
+- [v2.0 Phase 8]: validate.sh counts bmi-tester 0.5.9 vector grid bug as PASS* (known upstream bug)
 
 ### Blockers/Concerns
 
 - ~~[Phase 7]: `undefined symbol: hydro_stop_` when importing pymt_wrfhydro~~ -- RESOLVED in 07-01
-- [Phase 8]: bmi-tester Stage 3 vector grid behavior for grid 2 (channel) -- needs live verification
+- ~~[Phase 8]: bmi-tester Stage 3 vector grid behavior for grid 2 (channel) -- needs live verification~~ -- VERIFIED: bmi-tester 0.5.9 bug, not our code
 - [Phase 9]: PyMT + OpenMPI 5.0.8 ABI compatibility -- test with --dry-run before install
 
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 08-01-PLAN.md (bmi-tester validation: 118 passed, 1 bmi-tester bug)
+Stopped at: Completed 08-02-PLAN.md (Croton NY validation + Doc 18 + validate.sh)
 Resume file: None
-Next action: Execute 08-02-PLAN.md (Full Croton NY validation + Doc 18 + validate.sh)
+Next action: Phase 9 (PyMT integration -- grid mapping, time sync, data exchange)

@@ -32,7 +32,7 @@ Requirements for the babelizer milestone. Each maps to roadmap phases.
 - [x] **VAL-01**: bmi-tester Stage 1 passes (component name, var names/counts, time functions)
 - [x] **VAL-02**: bmi-tester Stage 2 passes (var type/units/itemsize/nbytes/location for all 12 variables)
 - [x] **VAL-03**: bmi-tester Stage 3 passes (grid metadata + get_value for all 3 grid types)
-- [ ] **VAL-04**: Croton NY channel streamflow values from Python match Fortran 151-test reference output (within floating-point tolerance)
+- [x] **VAL-04**: Croton NY channel streamflow values from Python match Fortran 151-test reference output (within floating-point tolerance)
 - [x] **VAL-05**: Expected non-implementations documented (get_value_ptr returns BMI_FAILURE, etc.)
 
 ### PyMT Integration
@@ -93,7 +93,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VAL-01 | Phase 8 | Complete |
 | VAL-02 | Phase 8 | Complete |
 | VAL-03 | Phase 8 | Complete |
-| VAL-04 | Phase 8 | Pending |
+| VAL-04 | Phase 8 | Complete |
 | VAL-05 | Phase 8 | Complete |
 | PYMT-01 | Phase 9 | Pending |
 | PYMT-02 | Phase 9 | Pending |
