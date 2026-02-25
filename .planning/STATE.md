@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** WRF-Hydro must be controllable from Python via PyMT -- babelize init must produce a working pymt_wrfhydro package
-**Current focus:** Phase 5 (Library Hardening) -- first phase of v2.0 Babelizer milestone
+**Current focus:** Phase 5 (Library Hardening) COMPLETE -- ready for Phase 6 (Babelizer Env + Skeleton)
 
 ## Current Position
 
-Phase: 5 of 9 (Library Hardening)
-Plan: 1 of 2
-Status: Plan 1 complete
-Last activity: 2026-02-25 -- Completed 05-01 (C binding removal, babelizer readiness 4/4 PASS)
+Phase: 5 of 9 (Library Hardening) -- COMPLETE
+Plan: 2 of 2
+Status: Phase 5 complete
+Last activity: 2026-02-25 -- Completed 05-02 (documentation update for C binding removal)
 
-Progress: [██████░░░░] 64% (v1.0 complete: 6/6 plans; v2.0: 1/? plans)
+Progress: [██████░░░░] 73% (v1.0 complete: 6/6 plans; v2.0: 2/? plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7 (v1.0: 6, v2.0: 1)
+- Total plans completed: 8 (v1.0: 6, v2.0: 2)
 - Average duration: 6.6 min
-- Total execution time: 0.8 hours
+- Total execution time: 0.9 hours
 
 **By Phase (v1.0 Shared Library):**
 
@@ -36,7 +36,7 @@ Progress: [██████░░░░] 64% (v1.0 complete: 6/6 plans; v2.0: 
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 5. Library Hardening | 1/2 | 6 min | 6 min |
+| 5. Library Hardening | 2/2 | 13 min | 6.5 min |
 
 *Updated after each plan completion*
 
@@ -49,6 +49,7 @@ Progress: [██████░░░░] 64% (v1.0 complete: 6/6 plans; v2.0: 
 - [v2.0]: C binding conflict RESOLVED -- bmi_wrf_hydro_c.f90 deleted, .so rebuilt with zero C symbols
 - [v2.0]: pip --no-build-isolation MANDATORY for all pip install commands
 - [v2.0]: PyMT installed separately in final phase to isolate large dep tree
+- [v2.0 Phase 5]: CLAUDE.md and Doc 16 updated to reflect C binding removal (no stale references for future sessions)
 
 ### Blockers/Concerns
 
@@ -58,6 +59,6 @@ Progress: [██████░░░░] 64% (v1.0 complete: 6/6 plans; v2.0: 
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 05-01-PLAN.md (C binding removal)
+Stopped at: Completed 05-02-PLAN.md (documentation update for C binding removal)
 Resume file: None
-Next action: /gsd:execute-phase 05-library-hardening (plan 02)
+Next action: /gsd:plan-phase 06-babelizer-env (Phase 6: Babelizer Environment + Skeleton)

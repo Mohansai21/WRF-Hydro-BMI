@@ -74,7 +74,7 @@ Plans:
 
 **Milestone Goal:** Babelize WRF-Hydro's shared library into a `pymt_wrfhydro` Python package, validated against Croton NY reference data and registered with PyMT.
 
-- [ ] **Phase 5: Library Hardening** - Rebuild libbmiwrfhydrof.so without conflicting C binding symbols and verify all prerequisites for babelization
+- [x] **Phase 5: Library Hardening** - Rebuild libbmiwrfhydrof.so without conflicting C binding symbols and verify all prerequisites for babelization
 - [ ] **Phase 6: Babelizer Environment + Skeleton** - Install babelizer toolchain, write babel.toml, generate pymt_wrfhydro package skeleton
 - [ ] **Phase 7: Package Build** - Build and install pymt_wrfhydro so it imports and runs from Python
 - [ ] **Phase 8: BMI Compliance Validation** - Pass bmi-tester stages and validate Croton NY results from Python match Fortran reference
@@ -94,8 +94,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Remove C binding layer, update build systems, rebuild + regression test + readiness check
-- [ ] 05-02-PLAN.md — Update CLAUDE.md and Doc 16 to reflect C binding removal
+- [x] 05-01-PLAN.md — Remove C binding layer, update build systems, rebuild + regression test + readiness check
+- [x] 05-02-PLAN.md — Update CLAUDE.md and Doc 16 to reflect C binding removal
 
 ### Phase 6: Babelizer Environment + Skeleton
 **Goal**: The babelizer toolchain is installed, babel.toml is written with the correct naming chain, and `babelize init` generates the complete pymt_wrfhydro package directory with all auto-generated files
@@ -164,7 +164,7 @@ Phases execute in numeric order: 5 -> 6 -> 7 -> 8 -> 9
 | 2. Shared Library + Install | v1.0 | 2/2 | Complete | 2026-02-24 |
 | 3. Python Validation | v1.0 | 2/2 | Complete | 2026-02-24 |
 | 4. Documentation | v1.0 | 1/1 | Complete | 2026-02-24 |
-| 5. Library Hardening | v2.0 | 0/? | Not started | - |
+| 5. Library Hardening | v2.0 | 2/2 | Complete | 2026-02-25 |
 | 6. Babelizer Environment + Skeleton | v2.0 | 0/? | Not started | - |
 | 7. Package Build | v2.0 | 0/? | Not started | - |
 | 8. BMI Compliance Validation | v2.0 | 0/? | Not started | - |
