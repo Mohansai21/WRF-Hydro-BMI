@@ -273,7 +273,6 @@ endif()
 # delegates to the module version to resolve the linker error.
 add_library(${bmi_name} SHARED
   src/bmi_wrf_hydro.f90
-  src/bmi_wrf_hydro_c.f90
   src/hydro_stop_shim.f90
   ${WRF_IO_SRC_DIR}/module_NoahMP_hrldas_driver.F
   ${WRF_IO_SRC_DIR}/module_hrldas_netcdf_io.F
@@ -388,12 +387,6 @@ install(
 # Install the BMI state module .mod file
 install(
   FILES ${CMAKE_Fortran_MODULE_DIRECTORY}/wrfhydro_bmi_state_mod.mod
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
-
-# Install the C binding module .mod file
-install(
-  FILES ${CMAKE_Fortran_MODULE_DIRECTORY}/bmi_wrf_hydro_c_mod.mod
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 

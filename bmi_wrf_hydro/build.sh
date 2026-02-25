@@ -145,14 +145,6 @@ fi
 ${FC} ${FFLAGS} ${EXTRA_FFLAGS} ${INCLUDES} ${MOD_OUT} "${SRC_DIR}/bmi_wrf_hydro.f90" -o "${BUILD_DIR}/bmi_wrf_hydro.o"
 echo "    -> build/bmi_wrf_hydro.o created"
 
-echo "=== Step 1b: Compile src/bmi_wrf_hydro_c.f90 (C binding layer) ==="
-${FC} ${FFLAGS} ${EXTRA_FFLAGS} \
-  -ffree-form -ffree-line-length-none -fconvert=big-endian -frecord-marker=4 \
-  -fallow-argument-mismatch \
-  ${INCLUDES} ${MOD_OUT} \
-  "${SRC_DIR}/bmi_wrf_hydro_c.f90" -o "${BUILD_DIR}/bmi_wrf_hydro_c.o"
-echo "    -> build/bmi_wrf_hydro_c.o created"
-
 # ========== Step 2 (shared mode): Build libbmiwrfhydrof.so ==========
 if [ "$USE_SHARED" = "true" ]; then
   echo ""
@@ -194,7 +186,6 @@ if [ "$USE_SHARED" = "true" ]; then
   # NOTE: Uses our -fPIC recompiled .o files from build/, NOT the originals
   gfortran -shared -o "${BUILD_DIR}/libbmiwrfhydrof.so" \
     "${BUILD_DIR}/bmi_wrf_hydro.o" \
-    "${BUILD_DIR}/bmi_wrf_hydro_c.o" \
     "${BUILD_DIR}/module_NoahMP_hrldas_driver.F.o" \
     "${BUILD_DIR}/module_hrldas_netcdf_io.F.o" \
     -Wl,--whole-archive ${WRF_STATIC_LIBS_FULL} -Wl,--no-whole-archive \
@@ -215,7 +206,6 @@ link_executable() {
   echo "    Linking ${OUT_NAME} (static)..."
   mpif90 -o "${BUILD_DIR}/${OUT_NAME}" \
     "${BUILD_DIR}/bmi_wrf_hydro.o" \
-    "${BUILD_DIR}/bmi_wrf_hydro_c.o" \
     "${OBJ_FILE}" \
     "${WRF_OBJ}/module_NoahMP_hrldas_driver.F.o" \
     "${WRF_OBJ}/module_hrldas_netcdf_io.F.o" \
@@ -321,6 +311,30 @@ if [ "$USE_SHARED" = "true" ]; then
     exit 1
   else
     echo "*** ALL TESTS PASSED ***"
+  fi
+
+  # ========== Auto-install to $CONDA_PREFIX ==========
+  if [ -n "$CONDA_PREFIX" ]; then
+    echo ""
+    echo "=== Installing to $CONDA_PREFIX ==="
+
+    # Install shared library with versioned symlinks
+    cp "${BUILD_DIR}/libbmiwrfhydrof.so" "${CONDA_PREFIX}/lib/libbmiwrfhydrof.so.1.0.0"
+    ln -sf libbmiwrfhydrof.so.1.0.0 "${CONDA_PREFIX}/lib/libbmiwrfhydrof.so.1"
+    ln -sf libbmiwrfhydrof.so.1 "${CONDA_PREFIX}/lib/libbmiwrfhydrof.so"
+    echo "    -> libbmiwrfhydrof.so.1.0.0 installed to ${CONDA_PREFIX}/lib/"
+
+    # Install Fortran module files
+    cp "${BUILD_DIR}/bmiwrfhydrof.mod" "${CONDA_PREFIX}/include/"
+    cp "${BUILD_DIR}/wrfhydro_bmi_state_mod.mod" "${CONDA_PREFIX}/include/"
+    echo "    -> bmiwrfhydrof.mod installed to ${CONDA_PREFIX}/include/"
+    echo "    -> wrfhydro_bmi_state_mod.mod installed to ${CONDA_PREFIX}/include/"
+
+    echo "=== INSTALL COMPLETE ==="
+  else
+    echo ""
+    echo "WARNING: CONDA_PREFIX not set, skipping auto-install."
+    echo "Activate a conda environment and re-run to install."
   fi
 else
   echo "Run from bmi_wrf_hydro/ directory:"
