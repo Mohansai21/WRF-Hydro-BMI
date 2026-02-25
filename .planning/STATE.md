@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** WRF-Hydro must be controllable from Python via PyMT -- babelize init must produce a working pymt_wrfhydro package
-**Current focus:** Phase 7 (Package Build) -- COMPLETE (2/2 plans done)
+**Current focus:** Phase 8 (BMI Compliance Validation) -- IN PROGRESS (1/2 plans done)
 
 ## Current Position
 
-Phase: 7 of 9 (Package Build) -- COMPLETE
-Plan: 2 of 2 COMPLETE
-Status: Phase 7 complete, Phase 8 next
-Last activity: 2026-02-25 -- Completed 07-02 (E2E Python tests + MPI communicator fix)
+Phase: 8 of 9 (BMI Compliance Validation) -- IN PROGRESS
+Plan: 2 of 2 (08-02: Full Croton NY validation + Doc 18 + validate.sh)
+Status: Plan 08-01 complete (bmi-tester 118 passed, 40 skipped, 1 bmi-tester bug)
+Last activity: 2026-02-25 -- Completed 08-01-PLAN.md (bmi-tester validation)
 
-Progress: [████████░░] 85% (v1.0 complete: 6/6 plans; v2.0: 6/? plans)
+Progress: [█████████░] 90% (v1.0 complete: 6/6 plans; v2.0: 7/? plans)
 
 ## Performance Metrics
 
@@ -39,6 +39,7 @@ Progress: [████████░░] 85% (v1.0 complete: 6/6 plans; v2.0: 
 | 5. Library Hardening | 2/2 | 13 min | 6.5 min |
 | 6. Babelizer Env + Skeleton | 1/1 | 5 min | 5 min |
 | 7. Package Build | 2/2 | 15 min | 7.5 min |
+| 8. BMI Compliance Validation | 1/2 | 9 min | 9 min |
 
 *Updated after each plan completion*
 
@@ -61,6 +62,9 @@ Progress: [████████░░] 85% (v1.0 complete: 6/6 plans; v2.0: 
 - [v2.0 Phase 7]: MPI_Comm_dup added to BMI initialize() for HYDRO_COMM_WORLD when MPI pre-initialized by Python/mpi4py
 - [v2.0 Phase 7]: Session-scoped pytest fixture for singleton WRF-Hydro model (cannot re-initialize)
 - [v2.0 Phase 7]: Python reference values differ slightly from Fortran integration test B (prior set_value mutations) -- rtol=1e-3
+- [v2.0 Phase 8]: No BMI wrapper changes needed -- bmi-tester validates implementation as-is
+- [v2.0 Phase 8]: Grid 2 type stays "vector" (correct per BMI 2.0); bmi-tester 0.5.9 has UnboundLocalError for vector grids
+- [v2.0 Phase 8]: Monkey-patch run_bmi_tester.py fixes conftest discovery when CWD differs from bmi-tester test tree
 
 ### Blockers/Concerns
 
@@ -71,6 +75,6 @@ Progress: [████████░░] 85% (v1.0 complete: 6/6 plans; v2.0: 
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 07-02-PLAN.md (E2E Python tests + MPI communicator fix)
+Stopped at: Completed 08-01-PLAN.md (bmi-tester validation: 118 passed, 1 bmi-tester bug)
 Resume file: None
-Next action: /gsd:plan-phase or /gsd:execute-phase for Phase 8
+Next action: Execute 08-02-PLAN.md (Full Croton NY validation + Doc 18 + validate.sh)

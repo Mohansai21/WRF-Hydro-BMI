@@ -135,10 +135,11 @@ Plans:
   3. bmi-tester Stage 3 passes (grid metadata + get_value for all 3 grid types including vector channel network)
   4. Croton NY channel streamflow values from Python match Fortran 151-test reference output within floating-point tolerance
   5. Expected non-implementations are documented with justification (get_value_ptr returns BMI_FAILURE, grid topology for rectilinear grids)
-**Plans**: TBD
+**Plans**: 1/2 plans complete
 
 Plans:
-- [ ] 08-01: TBD
+- [x] 08-01: Run bmi-tester + fix failures + regression test
+- [ ] 08-02: Full Croton NY validation + Doc 18 + validate.sh
 
 ### Phase 9: PyMT Integration
 **Goal**: WrfHydroBmi is registered in the PyMT model registry with proper metadata, importable via `from pymt.models import WrfHydroBmi`, with complete documentation of the babelizer workflow
@@ -168,5 +169,5 @@ Phases execute in numeric order: 5 -> 6 -> 7 -> 8 -> 9
 | 5. Library Hardening | v2.0 | 2/2 | Complete | 2026-02-25 |
 | 6. Babelizer Environment + Skeleton | v2.0 | Complete    | 2026-02-25 | 2026-02-25 |
 | 7. Package Build | v2.0 | Complete    | 2026-02-25 | - |
-| 8. BMI Compliance Validation | v2.0 | 0/? | Not started | - |
+| 8. BMI Compliance Validation | v2.0 | 1/2 | In progress | - |
 | 9. PyMT Integration | v2.0 | 0/? | Not started | - |
