@@ -105,10 +105,10 @@ Plans:
   1. All 6 conda packages (babelizer, meson-python, meson, ninja, cython, python-build) are installed and importable
   2. `babel.toml` exists with correct naming chain (`library = "bmiwrfhydrof"`, `entry_point = "bmi_wrf_hydro"`, `package.name = "pymt_wrfhydro"`) and `mpi4py` in requirements
   3. `pymt_wrfhydro/` directory exists with all auto-generated files (bmi_interoperability.f90, .pyx, meson.build, pyproject.toml)
-**Plans**: TBD
+**Plans:** 1 plan
 
 Plans:
-- [ ] 06-01: TBD
+- [ ] 06-01-PLAN.md — Install babelizer toolchain, write babel.toml, generate pymt_wrfhydro skeleton, verify naming chain
 
 ### Phase 7: Package Build
 **Goal**: pymt_wrfhydro is built, installed, and importable from Python, with the full initialize/update/finalize cycle working end-to-end against Croton NY data
