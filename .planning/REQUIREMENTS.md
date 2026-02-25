@@ -79,32 +79,32 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LIB-01 | — | Pending |
-| LIB-02 | — | Pending |
-| LIB-03 | — | Pending |
-| LIB-04 | — | Pending |
-| ENV-01 | — | Pending |
-| ENV-02 | — | Pending |
-| ENV-03 | — | Pending |
-| BUILD-01 | — | Pending |
-| BUILD-02 | — | Pending |
-| BUILD-03 | — | Pending |
-| BUILD-04 | — | Pending |
-| VAL-01 | — | Pending |
-| VAL-02 | — | Pending |
-| VAL-03 | — | Pending |
-| VAL-04 | — | Pending |
-| VAL-05 | — | Pending |
-| PYMT-01 | — | Pending |
-| PYMT-02 | — | Pending |
-| PYMT-03 | — | Pending |
-| PYMT-04 | — | Pending |
+| LIB-01 | Phase 5 | Pending |
+| LIB-02 | Phase 5 | Pending |
+| LIB-03 | Phase 5 | Pending |
+| LIB-04 | Phase 5 | Pending |
+| ENV-01 | Phase 6 | Pending |
+| ENV-02 | Phase 6 | Pending |
+| ENV-03 | Phase 6 | Pending |
+| BUILD-01 | Phase 7 | Pending |
+| BUILD-02 | Phase 7 | Pending |
+| BUILD-03 | Phase 7 | Pending |
+| BUILD-04 | Phase 7 | Pending |
+| VAL-01 | Phase 8 | Pending |
+| VAL-02 | Phase 8 | Pending |
+| VAL-03 | Phase 8 | Pending |
+| VAL-04 | Phase 8 | Pending |
+| VAL-05 | Phase 8 | Pending |
+| PYMT-01 | Phase 9 | Pending |
+| PYMT-02 | Phase 9 | Pending |
+| PYMT-03 | Phase 9 | Pending |
+| PYMT-04 | Phase 9 | Pending |
 
 **Coverage:**
 - v1 requirements: 20 total
-- Mapped to phases: 0
-- Unmapped: 20 (pending roadmap creation)
+- Mapped to phases: 20
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-24*
-*Last updated: 2026-02-24 after initial definition*
+*Last updated: 2026-02-24 after roadmap creation (all 20 requirements mapped to Phases 5-9)*

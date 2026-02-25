@@ -4,17 +4,17 @@
 
 See: .planning/PROJECT.md (updated 2026-02-24)
 
-**Core value:** WRF-Hydro must be controllable from Python via PyMT — babelize init must produce a working pymt_wrfhydro package
-**Current focus:** Requirements COMPLETE — ready to create roadmap for v2.0
+**Core value:** WRF-Hydro must be controllable from Python via PyMT -- babelize init must produce a working pymt_wrfhydro package
+**Current focus:** Phase 5 (Library Hardening) -- first phase of v2.0 Babelizer milestone
 
 ## Current Position
 
-Phase: Not started (requirements complete, roadmap creation next)
-Plan: —
-Status: Requirements defined (20 reqs, 5 categories). Roadmap creation next.
-Last activity: 2026-02-24 — Requirements approved and committed
+Phase: 5 of 9 (Library Hardening)
+Plan: --
+Status: Ready to plan
+Last activity: 2026-02-24 -- Roadmap created for v2.0 (5 phases, 20 requirements mapped)
 
-Progress: [████░░░░░░] 40% (research + requirements done, roadmap remaining)
+Progress: [██████░░░░] 60% (v1.0 complete: 6/6 plans; v2.0: 0/? plans)
 
 ## Performance Metrics
 
@@ -39,47 +39,19 @@ Progress: [████░░░░░░] 40% (research + requirements done, ro
 ### Decisions
 
 - [v2.0 Scope]: WRF-Hydro only (no SCHISM babelization)
-- [v2.0 Validation]: Full validation (bmi-tester + Croton NY)
-- [v2.0 Version]: v2.0 (major version bump)
-- [v2.0 Requirements]: 20 requirements across 5 categories (LIB, ENV, BUILD, VAL, PYMT)
-- [v1.0]: Library named bmiwrfhydrof following CSDMS bmi{model}f convention
-- [v1.0]: Babelizer auto-generates 818-line bmi_interoperability.f90
-- [v1.0]: pkg-config discovery via bmiwrfhydrof.pc
-
-### Research Key Findings (from SUMMARY.md)
-
-- C binding conflict: rebuild .so without bmi_wrf_hydro_c.o
-- Babelizer v0.3.9 (conda-forge stable) + Meson migration following pymt_heatf
-- --no-build-isolation MANDATORY for pip install
-- MPI RTLD_GLOBAL: mpi4py import before pymt_wrfhydro
-- 6 new conda packages: babelizer, meson-python, meson, ninja, cython, python-build
-- PyMT separate install (large dep tree)
-- Suggested 5 phases matching our 5 requirement categories
-
-### Requirements Summary
-
-| Category | Count | IDs |
-|----------|-------|-----|
-| Library Hardening | 4 | LIB-01..04 |
-| Environment & Config | 3 | ENV-01..03 |
-| Package Build | 4 | BUILD-01..04 |
-| BMI Validation | 5 | VAL-01..05 |
-| PyMT Integration | 4 | PYMT-01..04 |
-| **Total** | **20** | |
-
-### Pending Todos
-
-- Create ROADMAP.md (spawn roadmapper agent)
-- Phases continue from v1.0's last phase (Phase 4) → v2.0 starts at Phase 5
+- [v2.0 Phases]: 5 phases (5-9) following dependency chain: lib hardening -> env+skeleton -> build -> validate -> PyMT
+- [v2.0]: C binding conflict is hard blocker -- must rebuild .so without bmi_wrf_hydro_c.o first
+- [v2.0]: pip --no-build-isolation MANDATORY for all pip install commands
+- [v2.0]: PyMT installed separately in final phase to isolate large dep tree
 
 ### Blockers/Concerns
 
-- [NEW]: PyMT + OpenMPI 5.0.8 ABI compatibility — test with --dry-run before Phase 5
-- [NEW]: bmi-tester Stage 3 vector grid behavior for grid 2 (channel) — needs live verification
+- [Phase 8]: bmi-tester Stage 3 vector grid behavior for grid 2 (channel) -- needs live verification
+- [Phase 9]: PyMT + OpenMPI 5.0.8 ABI compatibility -- test with --dry-run before install
 
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Requirements APPROVED + committed. Context exhausted before roadmap creation.
-Resume file: .planning/REQUIREMENTS.md
-Next action: /gsd:new-milestone (RESUME from Step 10 — Create Roadmap). Spawn roadmapper with starting_phase=5 (v1.0 ended at phase 4). Read PROJECT.md, REQUIREMENTS.md, SUMMARY.md, MILESTONES.md. After roadmap approved, commit + display next steps.
+Stopped at: Roadmap created for v2.0 Babelizer milestone (5 phases, 20 requirements)
+Resume file: None
+Next action: /gsd:plan-phase 5

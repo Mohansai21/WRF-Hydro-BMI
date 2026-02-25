@@ -24,4 +24,7 @@
 **Goal:** Babelize WRF-Hydro into `pymt_wrfhydro` Python package, validated against Croton NY reference data.
 
 **Started:** 2026-02-24
-**Status:** Defining requirements
+**Status:** Roadmap created (5 phases, 20 requirements mapped)
+**Phases:** 5 (Library Hardening → Babelizer Environment + Skeleton → Package Build → BMI Compliance Validation → PyMT Integration)
+**Phase range:** 5-9
+**Requirements:** 20 total (LIB-01..04, ENV-01..03, BUILD-01..04, VAL-01..05, PYMT-01..04)
