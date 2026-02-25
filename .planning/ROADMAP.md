@@ -119,10 +119,11 @@ Plans:
   2. `from pymt_wrfhydro import WrfHydroBmi` imports without error in Python
   3. MPI is loaded correctly before the Cython extension imports libbmiwrfhydrof.so (no segfault from Open MPI plugin system)
   4. A Python script calling `initialize()` / `update()` / `finalize()` with Croton NY data runs to completion without error
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 07-01: TBD
+- [ ] 07-01-PLAN.md — Fix hydro_stop_ symbol, MPI bootstrap __init__.py, pip install + import validation
+- [ ] 07-02-PLAN.md — End-to-end Croton NY validation with Fortran reference comparison (pytest + standalone)
 
 ### Phase 8: BMI Compliance Validation
 **Goal**: The babelized pymt_wrfhydro passes official CSDMS bmi-tester validation and produces Croton NY results that match the Fortran reference output
