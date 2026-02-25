@@ -91,10 +91,11 @@ Plans:
   2. Both `bmiwrfhydrof.mod` and `wrfhydro_bmi_state_mod.mod` are verified present in `$CONDA_PREFIX/include/`
   3. `pkg-config --cflags --libs bmiwrfhydrof` returns correct flags pointing to the rebuilt library
   4. The existing 151-test Fortran suite passes against the rebuilt `.so` with no regressions
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 05-01: TBD
+- [ ] 05-01-PLAN.md — Remove C binding layer, update build systems, rebuild + regression test + readiness check
+- [ ] 05-02-PLAN.md — Update CLAUDE.md and Doc 16 to reflect C binding removal
 
 ### Phase 6: Babelizer Environment + Skeleton
 **Goal**: The babelizer toolchain is installed, babel.toml is written with the correct naming chain, and `babelize init` generates the complete pymt_wrfhydro package directory with all auto-generated files
