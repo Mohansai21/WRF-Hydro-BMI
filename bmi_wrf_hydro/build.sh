@@ -168,6 +168,11 @@ if [ "$USE_SHARED" = "true" ]; then
     -o "${BUILD_DIR}/module_NoahMP_hrldas_driver.F.o"
   echo "    -> build/module_NoahMP_hrldas_driver.F.o recompiled with -fPIC"
 
+  echo "    Compiling hydro_stop_shim.f90 with -fPIC..."
+  ${FC} -c -fPIC -I${WRF_MODS} "${SRC_DIR}/hydro_stop_shim.f90" \
+      -o "${BUILD_DIR}/hydro_stop_shim.o"
+  echo "    -> build/hydro_stop_shim.o created"
+
   echo ""
   echo "=== Step 2b: Link shared library libbmiwrfhydrof.so ==="
 
@@ -186,6 +191,7 @@ if [ "$USE_SHARED" = "true" ]; then
   # NOTE: Uses our -fPIC recompiled .o files from build/, NOT the originals
   gfortran -shared -o "${BUILD_DIR}/libbmiwrfhydrof.so" \
     "${BUILD_DIR}/bmi_wrf_hydro.o" \
+    "${BUILD_DIR}/hydro_stop_shim.o" \
     "${BUILD_DIR}/module_NoahMP_hrldas_driver.F.o" \
     "${BUILD_DIR}/module_hrldas_netcdf_io.F.o" \
     -Wl,--whole-archive ${WRF_STATIC_LIBS_FULL} -Wl,--no-whole-archive \
